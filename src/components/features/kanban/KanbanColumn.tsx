@@ -88,7 +88,7 @@ export function KanbanColumn({
         'flex flex-col shrink-0 bg-neutral-100 rounded-xl max-h-full',
         isDragOver && 'bg-neutral-200'
       )}
-      style={{ padding: '15px', height: 'calc(100% - 10px)', width: '280px', overflow: 'hidden' }}
+      style={{ padding: '15px', height: '100%', width: '290px', overflow: 'hidden' }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}

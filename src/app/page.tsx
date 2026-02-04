@@ -7,8 +7,30 @@ import { TasksPanel } from '@/components/features/tasks/TasksPanel';
 import { NotesPanel } from '@/components/features/notes/NotesPanel';
 import { ProjectSelector } from '@/components/features/project-selector/ProjectSelector';
 import { EmptyState, Button } from '@/components/ui';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Modal, Input } from '@/components/ui';
+
+function useFullscreen() {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleChange);
+    return () => document.removeEventListener('fullscreenchange', handleChange);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  }, []);
+
+  return { isFullscreen, toggleFullscreen };
+}
 
 function WelcomeScreen() {
   const { createProject } = useApp();
@@ -98,8 +120,27 @@ function WelcomeScreen() {
 }
 
 function Dashboard() {
+  const { isFullscreen, toggleFullscreen } = useFullscreen();
+
   return (
-    <div className="flex h-full p-6 gap-4 bg-neutral-100 border-[20px] border-transparent">
+    <div className="relative flex h-full p-6 gap-4 bg-neutral-100 border-[20px] border-transparent">
+      {/* Fullscreen Toggle Button */}
+      <button
+        onClick={toggleFullscreen}
+        className="absolute top-2 right-2 p-2 rounded-lg bg-white/80 hover:bg-white text-neutral-500 hover:text-neutral-700 transition-colors shadow-sm"
+        title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+      >
+        {isFullscreen ? (
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
+          </svg>
+        ) : (
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+          </svg>
+        )}
+      </button>
+
       {/* Left Column - Project Selector + Tasks */}
       <div className="w-[20%] shrink-0 flex flex-col gap-2">
         {/* Project Selector */}

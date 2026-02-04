@@ -54,15 +54,15 @@ export function NotesPanel() {
   return (
     <div className="flex h-full overflow-hidden">
       {/* Notes List Sidebar */}
-      <div className="w-64 bg-neutral-50/80 flex flex-col shrink-0">
+      <div className="w-64 bg-neutral-50/80 flex flex-col shrink-0" style={{ padding: '5px' }}>
         {/* Header */}
-        <div className="px-4 pt-4 pb-2 flex items-center justify-between">
+        <div className="px-2 pt-2 pb-2 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide">Notes</h2>
-          <AddButton label="Add note" onClick={handleCreateNote} style={{ marginRight: '5px' }} />
+          <AddButton label="Add note" onClick={handleCreateNote} />
         </div>
 
         {/* Search */}
-        <div className="px-3 pb-2">
+        <div className="px-2 pb-2">
           <input
             type="text"
             value={searchQuery}
@@ -73,7 +73,7 @@ export function NotesPanel() {
         </div>
 
         {selectedCard && (
-          <div className="px-4 pb-2">
+          <div className="px-2 pb-2">
             <span className="text-xs text-blue-600">
               Linked to {selectedCard.title}
             </span>
@@ -81,7 +81,7 @@ export function NotesPanel() {
         )}
 
         {/* Notes List */}
-        <div className="flex-1 overflow-y-auto px-2 py-1">
+        <div className="flex-1 overflow-y-auto px-1 py-1">
           {notes.length === 0 ? (
             <div className="text-center text-sm text-neutral-400 py-8 px-2">
               {searchQuery
@@ -99,19 +99,19 @@ export function NotesPanel() {
                   className={cn(
                     'w-full text-left px-3 py-2.5 rounded-lg transition-all',
                     selectedNoteId === note.id
-                      ? 'bg-blue-500 text-white shadow-sm'
+                      ? 'bg-neutral-200 shadow-sm'
                       : 'hover:bg-neutral-200/60'
                   )}
                 >
                   <div className={cn(
                     'text-sm font-medium truncate',
-                    selectedNoteId === note.id ? 'text-white' : 'text-neutral-900'
+                    selectedNoteId === note.id ? 'text-neutral-900' : 'text-neutral-900'
                   )}>
                     {note.title || 'Untitled'}
                   </div>
                   <div className={cn(
                     'text-xs mt-0.5 flex items-center gap-2',
-                    selectedNoteId === note.id ? 'text-blue-100' : 'text-neutral-400'
+                    selectedNoteId === note.id ? 'text-neutral-500' : 'text-neutral-400'
                   )}>
                     <span>{formatRelativeDate(note.updatedAt)}</span>
                     {note.content && (

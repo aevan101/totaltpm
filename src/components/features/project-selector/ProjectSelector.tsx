@@ -48,7 +48,7 @@ export function ProjectSelector() {
             )}
           >
             <span
-              style={{ marginLeft: '3px' }}
+              style={{ marginLeft: '5px' }}
               className={cn(
                 'truncate',
                 currentProject ? 'text-neutral-900' : 'text-neutral-500'

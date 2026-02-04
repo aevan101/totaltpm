@@ -62,15 +62,18 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
             'w-full max-w-2xl': size === 'lg',
           }
         )}
+        style={{ border: '10px solid white', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}
       >
-        {title && (
-          <div className="px-6 py-4 border-b border-neutral-200">
-            <h2 id="modal-title" className="text-lg font-semibold text-neutral-900">
-              {title}
-            </h2>
-          </div>
-        )}
-        <div className="p-6">{children}</div>
+        <div style={{ padding: '10px' }}>
+          {title && (
+            <div className="px-4 py-3 border-b border-neutral-200">
+              <h2 id="modal-title" className="text-lg font-semibold text-neutral-900">
+                {title}
+              </h2>
+            </div>
+          )}
+          <div className="p-4">{children}</div>
+        </div>
       </div>
     </div>
   );

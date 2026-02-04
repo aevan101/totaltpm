@@ -165,9 +165,9 @@ export function NoteEditor({ note, cards, onSave, onDelete }: NoteEditorProps) {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden" style={{ padding: '5px' }}>
       {/* Header - subtle, Apple-like */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-neutral-100">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">
         <div className="flex items-center gap-4">
           <span className="text-xs text-neutral-400">
             {formatDate(note.updatedAt)}
@@ -296,25 +296,23 @@ export function NoteEditor({ note, cards, onSave, onDelete }: NoteEditorProps) {
       </div>
 
       {/* Title */}
-      <div className="px-6 pt-5">
+      <div className="px-4 pt-4">
         <input
           type="text"
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
           placeholder="Untitled"
-          style={{ marginLeft: '3px' }}
           className="w-full text-lg font-semibold text-neutral-800 placeholder:text-neutral-300 focus:outline-none tracking-tight"
         />
       </div>
 
       {/* Content - Rich Text Editor */}
-      <div className="flex-1 px-6 py-3 overflow-y-auto overflow-x-hidden">
+      <div className="flex-1 px-4 py-3 overflow-y-auto overflow-x-hidden">
         <div
           ref={editorRef}
           contentEditable
           onInput={handleContentChange}
           onKeyDown={handleKeyDown}
-          style={{ marginLeft: '3px' }}
           className="w-full h-full text-sm text-neutral-600 focus:outline-none leading-relaxed min-h-[200px]"
           data-placeholder="Start writing..."
         />
