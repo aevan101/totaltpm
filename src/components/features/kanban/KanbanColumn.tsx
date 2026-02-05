@@ -4,7 +4,7 @@ import { useState, type DragEvent } from 'react';
 import { cn } from '@/lib/utils';
 import { AddButton, Button, IconButton, Input } from '@/components/ui';
 import { KanbanCard } from './KanbanCard';
-import type { KanbanColumn as KanbanColumnType, KanbanCard as KanbanCardType } from '@/types';
+import type { KanbanColumn as KanbanColumnType, KanbanCard as KanbanCardType, Task } from '@/types';
 
 interface TaskProgress {
   total: number;
@@ -15,6 +15,7 @@ interface TaskProgress {
 interface KanbanColumnProps {
   column: KanbanColumnType;
   cards: KanbanCardType[];
+  projectTasks?: Task[];
   selectedCardId?: string | null;
   getCardProgress?: (cardId: string) => TaskProgress;
   onUpdateColumn: (id: string, title: string) => void;
@@ -31,6 +32,7 @@ interface KanbanColumnProps {
 export function KanbanColumn({
   column,
   cards,
+  projectTasks,
   selectedCardId,
   getCardProgress,
   onUpdateColumn,
@@ -184,6 +186,7 @@ export function KanbanColumn({
               card={card}
               isSelected={selectedCardId === card.id}
               taskProgress={getCardProgress?.(card.id)}
+              cardTasks={projectTasks?.filter((t) => t.cardId === card.id) ?? []}
               onEdit={onEditCard}
               onDelete={onDeleteCard}
               onSelect={onSelectCard}

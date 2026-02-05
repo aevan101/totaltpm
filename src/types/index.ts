@@ -20,6 +20,7 @@ export interface KanbanCard {
   id: string;
   title: string;
   description?: string;
+  priority?: TaskPriority;
   columnId: string;
   order: number;
   createdAt: number;

@@ -2,8 +2,10 @@
 
 import { useState, useMemo, type DragEvent, type MouseEvent } from 'react';
 import { cn } from '@/lib/utils';
-import { IconButton } from '@/components/ui';
-import type { KanbanCard as KanbanCardType } from '@/types';
+import { IconButton, Badge } from '@/components/ui';
+import { TASK_PRIORITY_LABELS, PRIORITY_COLORS } from '@/lib/constants';
+import { DeliverableStatusModal } from './DeliverableStatusModal';
+import type { KanbanCard as KanbanCardType, Task } from '@/types';
 
 interface TaskProgress {
   total: number;
@@ -15,6 +17,7 @@ interface KanbanCardProps {
   card: KanbanCardType;
   isSelected?: boolean;
   taskProgress?: TaskProgress;
+  cardTasks?: Task[];
   onEdit: (card: KanbanCardType) => void;
   onDelete: (id: string) => void;
   onSelect?: (card: KanbanCardType) => void;
@@ -33,8 +36,9 @@ function getDaysInColumn(columnChangedAt: number | undefined): { days: number; l
   return { days: diffDays, label: `${diffDays} days` };
 }
 
-export function KanbanCard({ card, isSelected, taskProgress, onEdit, onDelete, onSelect, onDragStart }: KanbanCardProps) {
+export function KanbanCard({ card, isSelected, taskProgress, cardTasks = [], onEdit, onDelete, onSelect, onDragStart }: KanbanCardProps) {
   const [isDragging, setIsDragging] = useState(false);
+  const [showStatus, setShowStatus] = useState(false);
 
   const daysInfo = useMemo(() => getDaysInColumn(card.columnChangedAt), [card.columnChangedAt]);
 
@@ -59,6 +63,11 @@ export function KanbanCard({ card, isSelected, taskProgress, onEdit, onDelete, o
     onEdit(card);
   };
 
+  const handleStatusClick = (e: MouseEvent) => {
+    e.stopPropagation();
+    setShowStatus(true);
+  };
+
   return (
     <div
       draggable
@@ -78,6 +87,9 @@ export function KanbanCard({ card, isSelected, taskProgress, onEdit, onDelete, o
         <div className="flex-1 min-w-0">
           <h4 className="text-sm font-medium text-neutral-900 leading-relaxed truncate">{card.title}</h4>
           <div className="flex items-center gap-1.5 mt-1">
+            <Badge className={cn(PRIORITY_COLORS[card.priority ?? 'p2'], 'text-[10px] px-1.5 py-0')}>
+              {TASK_PRIORITY_LABELS[card.priority ?? 'p2']}
+            </Badge>
             <svg className="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -92,6 +104,16 @@ export function KanbanCard({ card, isSelected, taskProgress, onEdit, onDelete, o
           </div>
         </div>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+          <IconButton
+            variant="ghost"
+            size="sm"
+            label="Status summary"
+            onClick={handleStatusClick}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+            </svg>
+          </IconButton>
           <IconButton
             variant="ghost"
             size="sm"
@@ -136,6 +158,13 @@ export function KanbanCard({ card, isSelected, taskProgress, onEdit, onDelete, o
           </div>
         </div>
       )}
+
+      <DeliverableStatusModal
+        card={card}
+        tasks={cardTasks}
+        isOpen={showStatus}
+        onClose={() => setShowStatus(false)}
+      />
     </div>
   );
 }

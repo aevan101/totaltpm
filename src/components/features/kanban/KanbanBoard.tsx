@@ -5,12 +5,13 @@ import { useKanban } from '@/hooks/useKanban';
 import { KanbanColumn } from './KanbanColumn';
 import { CardDetailModal } from './CardDetailModal';
 import { Button, Input, EmptyState } from '@/components/ui';
-import type { KanbanCard } from '@/types';
+import type { KanbanCard, Task, TaskPriority } from '@/types';
 
 export function KanbanBoard() {
   const {
     columns,
     cards,
+    projectTasks,
     getColumnCards,
     selectedCardId,
     setSelectedCardId,
@@ -68,7 +69,7 @@ export function KanbanBoard() {
     }
   };
 
-  const handleSaveCard = (id: string, updates: { title: string; description?: string }) => {
+  const handleSaveCard = (id: string, updates: { title: string; description?: string; priority?: TaskPriority }) => {
     updateCard(id, updates);
   };
 
@@ -128,6 +129,7 @@ export function KanbanBoard() {
               key={column.id}
               column={column}
               cards={getColumnCards(column.id)}
+              projectTasks={projectTasks}
               selectedCardId={selectedCardId}
               getCardProgress={getCardProgress}
               onUpdateColumn={updateColumn}

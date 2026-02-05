@@ -9,6 +9,7 @@ import type {
   KanbanColumn,
   KanbanCard,
   Task,
+  TaskPriority,
   Note,
   ViewType,
 } from '@/types';
@@ -38,8 +39,8 @@ interface AppContextType {
   updateColumn: (id: string, title: string) => void;
   deleteColumn: (id: string) => void;
   reorderColumns: (columns: KanbanColumn[]) => void;
-  createCard: (columnId: string, title: string, description?: string) => KanbanCard;
-  updateCard: (id: string, updates: Partial<Pick<KanbanCard, 'title' | 'description' | 'columnId' | 'order'>>) => void;
+  createCard: (columnId: string, title: string, description?: string, priority?: TaskPriority) => KanbanCard;
+  updateCard: (id: string, updates: Partial<Pick<KanbanCard, 'title' | 'description' | 'priority' | 'columnId' | 'order'>>) => void;
   deleteCard: (id: string) => void;
   moveCard: (cardId: string, targetColumnId: string, newOrder: number) => void;
 
@@ -209,7 +210,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const createCard = useCallback(
-    (columnId: string, title: string, description?: string): KanbanCard => {
+    (columnId: string, title: string, description?: string, priority?: TaskPriority): KanbanCard => {
       const columnCards = cards.filter((c) => c.columnId === columnId);
       const maxOrder = columnCards.length > 0
         ? Math.max(...columnCards.map((c) => c.order))
@@ -220,6 +221,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         id: generateId(),
         title,
         description,
+        priority: priority ?? 'p2',
         columnId,
         order: maxOrder + 1,
         createdAt: now,
@@ -234,7 +236,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updateCard = useCallback(
-    (id: string, updates: Partial<Pick<KanbanCard, 'title' | 'description' | 'columnId' | 'order'>>) => {
+    (id: string, updates: Partial<Pick<KanbanCard, 'title' | 'description' | 'priority' | 'columnId' | 'order'>>) => {
       setCards((prev) =>
         prev.map((c) =>
           c.id === id ? { ...c, ...updates, updatedAt: Date.now() } : c
