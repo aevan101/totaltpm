@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useCallback, useMemo, useState, useEffect } from 'react';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { STORAGE_KEYS, DEFAULT_COLUMNS } from '@/lib/constants';
+import { useApiStorage } from '@/hooks/useApiStorage';
+import { DEFAULT_COLUMNS } from '@/lib/constants';
 import { generateId } from '@/lib/utils';
 import type {
   Project,
@@ -25,6 +25,8 @@ interface AppContextType {
   notes: Note[];
   isHydrated: boolean;
   selectedCardId: string | null;
+  apiError: string | null;
+  isSaving: boolean;
 
   // Project actions
   setCurrentProjectId: (id: string | null) => void;
@@ -58,32 +60,58 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [currentProjectId, setCurrentProjectId] = useLocalStorage<string | null>(
-    STORAGE_KEYS.CURRENT_PROJECT,
-    null
-  );
-  const [projects, setProjects, projectsHydrated] = useLocalStorage<Project[]>(
-    STORAGE_KEYS.PROJECTS,
-    []
-  );
-  const [columns, setColumns, columnsHydrated] = useLocalStorage<KanbanColumn[]>(
-    STORAGE_KEYS.COLUMNS,
-    []
-  );
-  const [cards, setCards, cardsHydrated] = useLocalStorage<KanbanCard[]>(
-    STORAGE_KEYS.CARDS,
-    []
-  );
-  const [tasks, setTasks, tasksHydrated] = useLocalStorage<Task[]>(
-    STORAGE_KEYS.TASKS,
-    []
-  );
-  const [notes, setNotes, notesHydrated] = useLocalStorage<Note[]>(
-    STORAGE_KEYS.NOTES,
-    []
+  const { data, isHydrated, error: apiError, isSaving, updateData } = useApiStorage();
+
+  // Extract data from API storage
+  const projects = data.projects;
+  const columns = data.columns;
+  const cards = data.cards;
+  const tasks = data.tasks;
+  const notes = data.notes;
+  const currentProjectId = data.currentProjectId;
+
+  // Setters that update API storage
+  const setProjects = useCallback(
+    (updater: Project[] | ((prev: Project[]) => Project[])) => {
+      updateData('projects', updater);
+    },
+    [updateData]
   );
 
-  const isHydrated = projectsHydrated && columnsHydrated && cardsHydrated && tasksHydrated && notesHydrated;
+  const setColumns = useCallback(
+    (updater: KanbanColumn[] | ((prev: KanbanColumn[]) => KanbanColumn[])) => {
+      updateData('columns', updater);
+    },
+    [updateData]
+  );
+
+  const setCards = useCallback(
+    (updater: KanbanCard[] | ((prev: KanbanCard[]) => KanbanCard[])) => {
+      updateData('cards', updater);
+    },
+    [updateData]
+  );
+
+  const setTasks = useCallback(
+    (updater: Task[] | ((prev: Task[]) => Task[])) => {
+      updateData('tasks', updater);
+    },
+    [updateData]
+  );
+
+  const setNotes = useCallback(
+    (updater: Note[] | ((prev: Note[]) => Note[])) => {
+      updateData('notes', updater);
+    },
+    [updateData]
+  );
+
+  const setCurrentProjectId = useCallback(
+    (id: string | null) => {
+      updateData('currentProjectId', id);
+    },
+    [updateData]
+  );
 
   // View state (not persisted - resets on refresh)
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
@@ -385,6 +413,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       notes,
       isHydrated,
       selectedCardId,
+      apiError,
+      isSaving,
       setCurrentProjectId,
       setCurrentView,
       setSelectedCardId,
@@ -416,6 +446,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       notes,
       isHydrated,
       selectedCardId,
+      apiError,
+      isSaving,
       setCurrentProjectId,
       createProject,
       updateProject,
