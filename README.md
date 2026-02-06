@@ -82,7 +82,67 @@ This will launch the application in production mode, and you can access it via [
 
 ## Tech Stack
 
-The stack is Next.js (React + TypeScript) with Tailwind CSS, all running on Node.js. There are no other languages involved — no Python backend, no SQL database, no native code. All data is persisted client-side via localStorage.
+The stack is Next.js (React + TypeScript) with Tailwind CSS, all running on Node.js. There are no other languages involved — no Python backend, no SQL database, no native code.
+
+## Backend Data Storage
+
+The application uses a file-based JSON storage system with a client-side sync layer. There is no external database — all data lives in a single JSON file on the server.
+
+### Architecture
+
+```
+Client (Browser)                        Server (Next.js API)
+┌──────────────┐    fetch /api/data    ┌──────────────────────┐
+│ useApiStorage├───────GET────────────►│ GET  /api/data       │
+│   (hook)     │◄─────JSON─────────────│   → reads app-data   │
+│              │                       │     .json            │
+│              │───────PUT────────────►│ PUT  /api/data       │
+│              │◄────success───────────│   → writes app-data  │
+│              │                       │     .json            │
+└──────┬───────┘                       └──────────┬───────────┘
+       │                                          │
+  React state                            data/app-data.json
+  + debounced                            (single flat file)
+    auto-save
+```
+
+### How It Works
+
+1. **API Route** (`src/app/api/data/route.ts`) — A Next.js route handler that exposes two endpoints:
+   - `GET /api/data` — Reads and returns the contents of `data/app-data.json`. If the file doesn't exist yet, it creates it with empty defaults.
+   - `PUT /api/data` — Accepts a JSON body, validates that each top-level field is the correct type (arrays for collections, string or null for `currentProjectId`), and writes it to disk.
+
+2. **Client API layer** (`src/lib/api.ts`) — Thin `fetch` wrappers (`loadData` and `saveData`) that call the API route and normalize the response with nullish-coalescing fallbacks.
+
+3. **Sync hook** (`src/hooks/useApiStorage.ts`) — The `useApiStorage` React hook manages the full lifecycle:
+   - Loads data from the API on mount.
+   - Exposes an `updateData` function that updates React state immediately and triggers a **debounced save** (300ms) to the server.
+   - On unmount, any pending unsaved data is flushed synchronously.
+
+4. **localStorage utilities** (`src/lib/storage.ts`) — Legacy helper functions for `getFromStorage`, `setToStorage`, and `removeFromStorage`. These are still available but the primary persistence path now goes through the API.
+
+### Data Shape
+
+All application data is stored in a single flat JSON structure:
+
+```json
+{
+  "projects": [],
+  "columns": [],
+  "cards": [],
+  "tasks": [],
+  "notes": [],
+  "currentProjectId": null
+}
+```
+
+Each array holds the full set of records for that entity type. Relationships are expressed via ID references (e.g., a task's `cardId` links it to a kanban card, a column's `projectId` links it to a project).
+
+### Trade-offs
+
+- **Simple to run** — No database setup, no migrations, no connection strings. Clone and `npm run dev`.
+- **Single-user** — The flat-file approach is designed for individual use. Concurrent writes from multiple users would overwrite each other.
+- **No partial updates** — Every save writes the entire data set. This keeps the code simple but means write size grows with data volume.
 
 ---
 
