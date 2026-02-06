@@ -80,6 +80,12 @@ This will launch the application in production mode, and you can access it via [
 
 ---
 
+## Tech Stack
+
+The stack is Next.js (React + TypeScript) with Tailwind CSS, all running on Node.js. There are no other languages involved — no Python backend, no SQL database, no native code. All data is persisted client-side via localStorage.
+
+---
+
 ## Additional Configuration
 This project uses **TypeScript** and **TailwindCSS** for styling:
 
