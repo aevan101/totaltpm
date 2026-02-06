@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, type DragEvent, type MouseEvent } from 'react';
-import { cn } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
 import { IconButton, Badge } from '@/components/ui';
 import { TASK_PRIORITY_LABELS, PRIORITY_COLORS } from '@/lib/constants';
 import { DeliverableStatusModal } from './DeliverableStatusModal';
@@ -41,6 +41,7 @@ export function KanbanCard({ card, isSelected, taskProgress, cardTasks = [], onE
   const [showStatus, setShowStatus] = useState(false);
 
   const daysInfo = useMemo(() => getDaysInColumn(card.columnChangedAt), [card.columnChangedAt]);
+  const isOverdue = card.dueDate && card.dueDate < Date.now();
 
   const handleDragStart = (e: DragEvent) => {
     setIsDragging(true);
@@ -75,7 +76,7 @@ export function KanbanCard({ card, isSelected, taskProgress, cardTasks = [], onE
       onDragEnd={handleDragEnd}
       onClick={handleClick}
       className={cn(
-        'bg-white border-2 rounded-lg cursor-pointer w-60 mx-auto',
+        'bg-white border-2 rounded-md cursor-pointer w-60 mx-auto',
         'hover:border-neutral-200 transition-all group',
         'shadow-sm hover:shadow',
         isSelected ? 'border-blue-500 ring-2 ring-blue-100' : 'border-white',
@@ -102,6 +103,19 @@ export function KanbanCard({ card, isSelected, taskProgress, cardTasks = [], onE
               {daysInfo.label}
             </span>
           </div>
+          {card.dueDate && (
+            <div className="flex items-center gap-1 mt-1 whitespace-nowrap overflow-hidden">
+              <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke={isOverdue ? '#dc2626' : '#6b7280'} strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+              </svg>
+              <span className={cn(
+                'text-xs truncate',
+                isOverdue ? 'text-red-600 font-medium' : 'text-neutral-500'
+              )}>
+                {isOverdue ? 'Overdue: ' : 'Due: '}{new Date(card.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </span>
+            </div>
+          )}
         </div>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           <IconButton

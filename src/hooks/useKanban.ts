@@ -51,8 +51,8 @@ export function useKanban() {
     }
   };
 
-  const addCard = (columnId: string, title: string, description?: string, priority?: import('@/types').TaskPriority) => {
-    createCard(columnId, title, description, priority);
+  const addCard = (columnId: string, title: string, description?: string, priority?: import('@/types').TaskPriority, dueDate?: number) => {
+    createCard(columnId, title, description, priority, dueDate);
   };
 
   const projectTasks = useMemo(

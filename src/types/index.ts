@@ -26,6 +26,7 @@ export interface KanbanCard {
   createdAt: number;
   updatedAt: number;
   columnChangedAt: number;  // When card entered current column
+  dueDate?: number;
 }
 
 // Link attachment

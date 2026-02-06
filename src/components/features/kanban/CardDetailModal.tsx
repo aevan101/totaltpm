@@ -9,19 +9,21 @@ interface CardDetailModalProps {
   card: KanbanCard | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (id: string, updates: { title: string; description?: string; priority?: TaskPriority }) => void;
+  onSave: (id: string, updates: { title: string; description?: string; priority?: TaskPriority; dueDate?: number }) => void;
 }
 
 export function CardDetailModal({ card, isOpen, onClose, onSave }: CardDetailModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('p2');
+  const [dueDate, setDueDate] = useState('');
 
   useEffect(() => {
     if (card) {
       setTitle(card.title);
       setDescription(card.description ?? '');
       setPriority(card.priority ?? 'p2');
+      setDueDate(card.dueDate ? new Date(card.dueDate).toISOString().split('T')[0] : '');
     }
   }, [card]);
 
@@ -36,6 +38,7 @@ export function CardDetailModal({ card, isOpen, onClose, onSave }: CardDetailMod
         title: title.trim(),
         description: description.trim() || undefined,
         priority,
+        dueDate: dueDate ? new Date(dueDate).getTime() : undefined,
       });
       onClose();
     }
@@ -69,6 +72,12 @@ export function CardDetailModal({ card, isOpen, onClose, onSave }: CardDetailMod
           value={priority}
           onChange={(e) => setPriority(e.target.value as TaskPriority)}
           options={priorityOptions}
+        />
+        <Input
+          type="date"
+          label="Due Date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
         />
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="secondary" onClick={onClose}>
