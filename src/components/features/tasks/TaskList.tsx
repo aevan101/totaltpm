@@ -75,19 +75,19 @@ export function TaskList() {
 
       {/* Stats */}
       <div className="flex gap-4 mb-6">
-        <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3">
+        <div className="bg-white border border-neutral-200 rounded-md px-4 py-3">
           <div className="text-2xl font-semibold text-neutral-900">{taskCounts.total}</div>
           <div className="text-xs text-neutral-500">Total</div>
         </div>
-        <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3">
+        <div className="bg-white border border-neutral-200 rounded-md px-4 py-3">
           <div className="text-2xl font-semibold text-neutral-900">{taskCounts.todo}</div>
           <div className="text-xs text-neutral-500">To Do</div>
         </div>
-        <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3">
+        <div className="bg-white border border-neutral-200 rounded-md px-4 py-3">
           <div className="text-2xl font-semibold text-neutral-900">{taskCounts.inProgress}</div>
           <div className="text-xs text-neutral-500">In Progress</div>
         </div>
-        <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3">
+        <div className="bg-white border border-neutral-200 rounded-md px-4 py-3">
           <div className="text-2xl font-semibold text-green-600">{taskCounts.done}</div>
           <div className="text-xs text-neutral-500">Done</div>
         </div>

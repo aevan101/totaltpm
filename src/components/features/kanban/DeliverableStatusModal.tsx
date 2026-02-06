@@ -206,7 +206,7 @@ export function DeliverableStatusModal({ card, tasks, isOpen, onClose }: Deliver
         </div>
 
         {/* Written Summary */}
-        <div className="bg-neutral-50 rounded-lg p-3">
+        <div className="bg-neutral-50 rounded-md p-3">
           <p className="text-sm text-neutral-700 leading-relaxed">{paragraph}</p>
         </div>
 

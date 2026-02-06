@@ -276,7 +276,7 @@ export function NoteEditor({ note, cards, onSave, onDelete }: NoteEditorProps) {
               )}
             </button>
             {showLinks && (
-              <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl border border-neutral-100 p-4 z-50">
+              <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-md shadow-xl border border-neutral-100 p-4 z-50">
                 <div className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-3">Attached Links</div>
                 <LinksEditor links={links} onChange={handleLinksChange} compact />
               </div>

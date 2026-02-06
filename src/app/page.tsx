@@ -127,7 +127,7 @@ function Dashboard() {
       {/* Fullscreen Toggle Button */}
       <button
         onClick={toggleFullscreen}
-        className="absolute top-2 right-2 p-2 rounded-lg bg-white/80 hover:bg-white text-neutral-500 hover:text-neutral-700 transition-colors shadow-sm"
+        className="absolute top-2 right-2 p-2 rounded-md bg-white/80 hover:bg-white text-neutral-500 hover:text-neutral-700 transition-colors shadow-sm"
         title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
       >
         {isFullscreen ? (
@@ -148,7 +148,7 @@ function Dashboard() {
           <ProjectSelector />
         </div>
         {/* Tasks Panel */}
-        <div className="flex-1 bg-white rounded-xl overflow-hidden shadow-sm border-2 border-white">
+        <div className="flex-1 bg-white rounded-md overflow-hidden shadow-sm border-2 border-white">
           <TasksPanel />
         </div>
       </div>
@@ -156,12 +156,12 @@ function Dashboard() {
       {/* Right Column - Kanban + Notes stacked */}
       <div className="flex-1 min-w-0 flex flex-col gap-4">
         {/* Kanban Board - aligned with project selector */}
-        <div className="h-[45%] bg-white rounded-xl overflow-hidden shadow-sm border-2 border-white">
+        <div className="h-[45%] bg-white rounded-md overflow-hidden shadow-sm border-2 border-white">
           <KanbanBoard />
         </div>
 
         {/* Notes */}
-        <div className="flex-1 bg-white rounded-xl overflow-hidden shadow-sm border-2 border-white">
+        <div className="flex-1 bg-white rounded-md overflow-hidden shadow-sm border-2 border-white">
           <NotesPanel />
         </div>
       </div>

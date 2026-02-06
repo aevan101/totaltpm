@@ -87,7 +87,7 @@ export function KanbanColumn({
   return (
     <div
       className={cn(
-        'flex flex-col shrink-0 bg-neutral-100 rounded-xl max-h-full',
+        'flex flex-col shrink-0 bg-neutral-100 rounded-md max-h-full',
         isDragOver && 'bg-neutral-200'
       )}
       style={{ padding: '15px', height: '100%', width: '290px', overflow: 'hidden' }}

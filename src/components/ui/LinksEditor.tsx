@@ -50,7 +50,7 @@ export function LinksEditor({ links, onChange, compact = false }: LinksEditorPro
           {links.map((link, index) => (
             <div
               key={index}
-              className="flex items-center gap-2 px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-lg group"
+              className="flex items-center gap-2 px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-md group"
             >
               <svg className="w-4 h-4 text-neutral-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
@@ -84,7 +84,7 @@ export function LinksEditor({ links, onChange, compact = false }: LinksEditorPro
 
       {/* Add link form */}
       {isAdding ? (
-        <div className="space-y-2 p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
+        <div className="space-y-2 p-3 bg-neutral-50 border border-neutral-200 rounded-md">
           <Input
             value={newUrl}
             onChange={(e) => setNewUrl(e.target.value)}

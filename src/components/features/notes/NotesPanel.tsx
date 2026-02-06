@@ -68,7 +68,7 @@ export function NotesPanel() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search"
-            className="w-full px-3 py-1.5 text-sm bg-neutral-200/50 rounded-lg placeholder:text-neutral-400 focus:outline-none focus:bg-neutral-200/80 transition-colors"
+            className="w-full px-3 py-1.5 text-sm bg-neutral-200/50 rounded-md placeholder:text-neutral-400 focus:outline-none focus:bg-neutral-200/80 transition-colors"
           />
         </div>
 
@@ -97,7 +97,7 @@ export function NotesPanel() {
                   key={note.id}
                   onClick={() => setSelectedNoteId(note.id)}
                   className={cn(
-                    'w-full text-left px-3 py-2.5 rounded-lg transition-all',
+                    'w-full text-left px-3 py-2.5 rounded-md transition-all',
                     selectedNoteId === note.id
                       ? 'bg-neutral-200 shadow-sm'
                       : 'hover:bg-neutral-200/60'

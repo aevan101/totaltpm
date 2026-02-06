@@ -53,7 +53,7 @@ export function CreateTaskModal({ isOpen, linkedCardTitle, onClose, onSave }: Cr
         className="flex flex-col gap-4"
       >
         {linkedCardTitle && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-purple-50 border border-purple-100 rounded-lg text-sm text-purple-700">
+          <div className="flex items-center gap-2 px-3 py-2 bg-purple-50 border border-purple-100 rounded-md text-sm text-purple-700">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
             </svg>

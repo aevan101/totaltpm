@@ -20,7 +20,7 @@ export function TaskItem({ task, cardTitle, onEdit, onDelete, onToggleStatus }: 
   return (
     <div
       className={cn(
-        'bg-white border border-neutral-200 rounded-lg p-5 transition-all hover:border-neutral-300 group',
+        'bg-white border border-neutral-200 rounded-md p-5 transition-all hover:border-neutral-300 group',
         task.status === 'done' && 'opacity-60'
       )}
     >

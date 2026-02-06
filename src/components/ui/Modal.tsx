@@ -53,7 +53,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
         ref={modalRef}
         tabIndex={-1}
         className={cn(
-          'relative bg-white rounded-lg shadow-xl',
+          'relative bg-white rounded-md shadow-xl',
           'max-h-[90vh] overflow-y-auto',
           'm-4',
           {

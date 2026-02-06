@@ -69,7 +69,7 @@ export function KanbanBoard() {
     }
   };
 
-  const handleSaveCard = (id: string, updates: { title: string; description?: string; priority?: TaskPriority }) => {
+  const handleSaveCard = (id: string, updates: { title: string; description?: string; priority?: TaskPriority; dueDate?: number }) => {
     updateCard(id, updates);
   };
 
@@ -147,7 +147,7 @@ export function KanbanBoard() {
           {/* Add Column */}
           <div className="w-72 shrink-0">
             {isAddingColumn ? (
-              <div className="bg-neutral-100 rounded-lg p-4 flex flex-col gap-3">
+              <div className="bg-neutral-100 rounded-md p-4 flex flex-col gap-3">
                 <Input
                   value={newColumnTitle}
                   onChange={(e) => setNewColumnTitle(e.target.value)}
@@ -180,7 +180,7 @@ export function KanbanBoard() {
             ) : (
               <Button
                 variant="ghost"
-                className="w-full justify-start text-neutral-500 border border-dashed border-neutral-300 rounded-lg h-12"
+                className="w-full justify-start text-neutral-500 border border-dashed border-neutral-300 rounded-md h-12"
                 onClick={() => setIsAddingColumn(true)}
               >
                 <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
