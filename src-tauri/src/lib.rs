@@ -5,14 +5,33 @@ use tauri::Manager;
 struct ServerProcess(Mutex<Option<Child>>);
 
 /// Build a PATH that includes common Node.js and git locations.
-/// macOS apps launched from Finder have a minimal PATH.
+/// Searches dynamically instead of hardcoding a single NVM version.
 fn get_enhanced_path() -> String {
     let home = std::env::var("HOME").unwrap_or_else(|_| String::from("/Users/angelevan"));
     let base_path = std::env::var("PATH").unwrap_or_default();
-    format!(
-        "/usr/local/bin:/opt/homebrew/bin:{}/.nvm/versions/node/v24.11.0/bin:{}",
-        home, base_path
-    )
+
+    let mut paths: Vec<String> = vec![
+        "/usr/local/bin".to_string(),
+        "/opt/homebrew/bin".to_string(),
+        format!("{}/.volta/bin", home),
+    ];
+
+    // Find NVM node versions dynamically (use the latest available)
+    let nvm_dir = format!("{}/.nvm/versions/node", home);
+    if let Ok(entries) = std::fs::read_dir(&nvm_dir) {
+        let mut versions: Vec<String> = entries
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().map(|t| t.is_dir()).unwrap_or(false))
+            .map(|e| e.path().join("bin").to_string_lossy().to_string())
+            .collect();
+        // Sort so the latest version comes first
+        versions.sort();
+        versions.reverse();
+        paths.extend(versions);
+    }
+
+    paths.push(base_path);
+    paths.join(":")
 }
 
 /// Find an available port starting from the preferred one.
@@ -25,13 +44,13 @@ fn find_available_port(start: u16) -> u16 {
     start
 }
 
-/// Run git pull in the project directory. Failures are non-fatal.
-fn run_git_pull(project_dir: &str) {
-    println!("[Total TPM] Running git pull...");
+/// Run git pull in the project directory. Returns true if code was updated.
+fn run_git_pull(project_dir: &str) -> bool {
+    println!("[Total TPM] Running git pull --ff-only...");
     let enhanced_path = get_enhanced_path();
 
     match Command::new("git")
-        .args(["pull", "origin", "main"])
+        .args(["pull", "--ff-only", "origin", "main"])
         .current_dir(project_dir)
         .env("PATH", &enhanced_path)
         .stdout(Stdio::piped())
@@ -42,19 +61,25 @@ fn run_git_pull(project_dir: &str) {
             let stdout = String::from_utf8_lossy(&output.stdout);
             let stderr = String::from_utf8_lossy(&output.stderr);
             if output.status.success() {
-                println!("[Total TPM] git pull: {}", stdout.trim());
+                let msg = stdout.trim();
+                println!("[Total TPM] git pull: {}", msg);
+                // Return true if code actually changed
+                !msg.contains("Already up to date")
             } else {
                 eprintln!("[Total TPM] git pull warning: {}", stderr.trim());
+                eprintln!("[Total TPM] git pull stdout: {}", stdout.trim());
+                false
             }
         }
         Err(e) => {
             eprintln!("[Total TPM] git pull failed to execute: {}", e);
+            false
         }
     }
 }
 
 /// Run npm install if node_modules is missing or package-lock.json is newer.
-fn run_npm_install(project_dir: &str) {
+fn run_npm_install(project_dir: &str) -> bool {
     let node_modules = std::path::Path::new(project_dir).join("node_modules");
     let lock_file = std::path::Path::new(project_dir).join("package-lock.json");
 
@@ -83,7 +108,7 @@ fn run_npm_install(project_dir: &str) {
     };
 
     if !needs_install {
-        return;
+        return false;
     }
 
     let enhanced_path = get_enhanced_path();
@@ -98,13 +123,46 @@ fn run_npm_install(project_dir: &str) {
         Ok(output) => {
             if output.status.success() {
                 println!("[Total TPM] npm install completed");
+                true
             } else {
                 let stderr = String::from_utf8_lossy(&output.stderr);
                 eprintln!("[Total TPM] npm install failed: {}", stderr.trim());
+                false
             }
         }
         Err(e) => {
             eprintln!("[Total TPM] npm install failed to execute: {}", e);
+            false
+        }
+    }
+}
+
+/// Build the Next.js app for production.
+fn run_next_build(project_dir: &str) -> bool {
+    let enhanced_path = get_enhanced_path();
+    println!("[Total TPM] Building Next.js for production...");
+
+    match Command::new("npx")
+        .args(["next", "build"])
+        .current_dir(project_dir)
+        .env("PATH", &enhanced_path)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+    {
+        Ok(output) => {
+            if output.status.success() {
+                println!("[Total TPM] Build complete");
+                true
+            } else {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                eprintln!("[Total TPM] Next.js build failed: {}", stderr.trim());
+                false
+            }
+        }
+        Err(e) => {
+            eprintln!("[Total TPM] Next.js build failed to execute: {}", e);
+            false
         }
     }
 }
@@ -114,7 +172,6 @@ fn start_nextjs_server(project_dir: &str, port: u16) -> Result<Child, String> {
     let enhanced_path = get_enhanced_path();
 
     let child = if cfg!(debug_assertions) {
-        // Development: use next dev
         Command::new("npx")
             .args(["next", "dev", "--port", &port.to_string()])
             .current_dir(project_dir)
@@ -124,23 +181,6 @@ fn start_nextjs_server(project_dir: &str, port: u16) -> Result<Child, String> {
             .spawn()
             .map_err(|e| format!("Failed to start Next.js dev server: {}", e))?
     } else {
-        // Production: build first, then start
-        println!("[Total TPM] Building Next.js for production...");
-        let build_output = Command::new("npx")
-            .args(["next", "build"])
-            .current_dir(project_dir)
-            .env("PATH", &enhanced_path)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .output()
-            .map_err(|e| format!("Failed to build Next.js: {}", e))?;
-
-        if !build_output.status.success() {
-            let stderr = String::from_utf8_lossy(&build_output.stderr);
-            return Err(format!("Next.js build failed: {}", stderr));
-        }
-        println!("[Total TPM] Build complete, starting production server...");
-
         Command::new("npx")
             .args(["next", "start", "--port", &port.to_string()])
             .current_dir(project_dir)
@@ -217,6 +257,15 @@ fn kill_server(child: &mut Child) {
     println!("[Total TPM] Server process terminated");
 }
 
+/// Send a status update to the loading screen.
+fn send_status(app_handle: &tauri::AppHandle, msg: &str) {
+    println!("[Total TPM] Status: {}", msg);
+    if let Some(window) = app_handle.get_webview_window("main") {
+        let js = format!("if(typeof updateStatus==='function')updateStatus('{}')", msg.replace('\'', "\\'"));
+        let _ = window.eval(&js);
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Determine the project directory
@@ -228,13 +277,11 @@ pub fn run() {
             .to_string_lossy()
             .to_string()
     } else {
-        // Production: use the known project directory
         let home = std::env::var("HOME").unwrap_or_else(|_| String::from("/Users/angelevan"));
         let default_dir = format!(
             "{}/Library/Mobile Documents/com~apple~CloudDocs/Documents/VS Code/Total TPM",
             home
         );
-        // Allow override via environment variable
         std::env::var("TOTAL_TPM_PROJECT_DIR").unwrap_or(default_dir)
     };
 
@@ -249,9 +296,7 @@ pub fn run() {
             tauri::async_runtime::spawn(async move {
                 if cfg!(debug_assertions) {
                     // Dev mode: Tauri CLI starts the server via beforeDevCommand.
-                    // Just show the window (server is already running).
                     println!("[Total TPM] Dev mode — server managed by Tauri CLI");
-                    // Small delay to let the page finish loading
                     tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
                     if let Some(window) = app_handle.get_webview_window("main") {
                         let _ = window.show();
@@ -259,31 +304,52 @@ pub fn run() {
                     }
                 } else {
                     // Production mode: full lifecycle management
+                    // The loading screen is already visible via frontendDist
+
                     // Step 1: Git pull
-                    println!("[Total TPM] === Step 1: Git pull ===");
-                    run_git_pull(&dir);
+                    send_status(&app_handle, "Checking for updates...");
+                    let code_changed = run_git_pull(&dir);
+                    if code_changed {
+                        send_status(&app_handle, "Updates found, applying...");
+                    } else {
+                        send_status(&app_handle, "Up to date");
+                    }
 
                     // Step 2: npm install if needed
-                    println!("[Total TPM] === Step 2: npm install check ===");
-                    run_npm_install(&dir);
+                    send_status(&app_handle, "Checking dependencies...");
+                    let deps_installed = run_npm_install(&dir);
+                    if deps_installed {
+                        send_status(&app_handle, "Dependencies updated");
+                    }
 
-                    // Step 3: Find available port
-                    println!("[Total TPM] === Step 3: Finding available port ===");
+                    // Step 3: Build only if code or deps changed
+                    let next_dir = std::path::Path::new(&dir).join(".next");
+                    let needs_build = code_changed || deps_installed || !next_dir.exists();
+
+                    if needs_build {
+                        send_status(&app_handle, "Building application...");
+                        if !run_next_build(&dir) {
+                            send_status(&app_handle, "Build failed — starting with previous version");
+                        }
+                    } else {
+                        println!("[Total TPM] No changes, skipping build");
+                    }
+
+                    // Step 4: Find available port
+                    send_status(&app_handle, "Starting server...");
                     let port = find_available_port(3000);
                     println!("[Total TPM] Using port: {}", port);
 
-                    // Step 4: Start Next.js server
-                    println!("[Total TPM] === Step 4: Starting Next.js server ===");
+                    // Step 5: Start Next.js server
                     match start_nextjs_server(&dir, port) {
                         Ok(child) => {
                             let state = app_handle.state::<ServerProcess>();
                             *state.0.lock().unwrap() = Some(child);
 
-                            // Step 5: Wait for server
-                            println!("[Total TPM] === Step 5: Waiting for server ===");
+                            // Step 6: Wait for server
+                            send_status(&app_handle, "Almost ready...");
                             match wait_for_server(port, 60).await {
                                 Ok(()) => {
-                                    println!("[Total TPM] === Step 6: Showing window ===");
                                     if let Some(window) = app_handle.get_webview_window("main") {
                                         let url = format!("http://localhost:{}", port);
                                         let _ = window.navigate(url.parse().unwrap());
@@ -291,23 +357,18 @@ pub fn run() {
                                             std::time::Duration::from_millis(500),
                                         )
                                         .await;
-                                        let _ = window.show();
                                         let _ = window.set_focus();
                                     }
                                 }
                                 Err(e) => {
                                     eprintln!("[Total TPM] Server failed to start: {}", e);
-                                    if let Some(window) = app_handle.get_webview_window("main") {
-                                        let _ = window.show();
-                                    }
+                                    send_status(&app_handle, "Server failed to start");
                                 }
                             }
                         }
                         Err(e) => {
                             eprintln!("[Total TPM] Failed to start server: {}", e);
-                            if let Some(window) = app_handle.get_webview_window("main") {
-                                let _ = window.show();
-                            }
+                            send_status(&app_handle, "Failed to start server");
                         }
                     }
                 }
