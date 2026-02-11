@@ -15,7 +15,7 @@ export function NoteItem({ note, isSelected, onClick }: NoteItemProps) {
     <button
       onClick={onClick}
       className={cn(
-        'w-full text-left p-4 border-b border-neutral-200 transition-colors',
+        'w-full text-left px-3 py-2 border-b border-neutral-200 transition-colors',
         'hover:bg-neutral-50',
         isSelected && 'bg-neutral-100'
       )}

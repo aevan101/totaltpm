@@ -11,7 +11,11 @@ import { TASK_PRIORITY_LABELS } from '@/lib/constants';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 
 export function TasksPanel() {
-  const { selectedCardId, cards } = useApp();
+  const { selectedCardId, cards, columns, currentProjectId } = useApp();
+
+  // Filter cards to current project only
+  const projectColumnIds = columns.filter((c) => c.projectId === currentProjectId).map((c) => c.id);
+  const projectCards = cards.filter((c) => projectColumnIds.includes(c.columnId) && !c.archived);
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
   const [searchFilter, setSearchFilter] = useState('');
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -19,7 +23,7 @@ export function TasksPanel() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Get selected card for display
-  const selectedCard = selectedCardId ? cards.find((c) => c.id === selectedCardId) : null;
+  const selectedCard = selectedCardId ? projectCards.find((c) => c.id === selectedCardId) : null;
 
   const { tasks, addTask, updateTask, deleteTask } = useTasks({
     status: statusFilter,
@@ -66,7 +70,7 @@ export function TasksPanel() {
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Header */}
-      <div className="px-6 py-4 flex items-center justify-between gap-3">
+      <div className="px-4 py-2.5 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <h2 className="text-base font-semibold text-neutral-900">Tasks</h2>
           {selectedCard && (
@@ -79,7 +83,7 @@ export function TasksPanel() {
       </div>
 
       {/* Filters */}
-      <div className="px-6 py-3 flex flex-col gap-3">
+      <div className="px-4 py-2 flex flex-col gap-2">
         <Input
           value={searchFilter}
           onChange={(e) => setSearchFilter(e.target.value)}
@@ -93,7 +97,7 @@ export function TasksPanel() {
       </div>
 
       {/* Task List */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      <div className="flex-1 overflow-y-auto px-4 py-3">
         {tasks.length === 0 ? (
           <div className="text-center text-sm text-neutral-400 py-12">
             {searchFilter || statusFilter !== 'all'
@@ -103,12 +107,12 @@ export function TasksPanel() {
                 : 'No tasks yet'}
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             {tasks.map((task) => (
               <TaskItem
                 key={task.id}
                 task={task}
-                cardTitle={task.cardId ? cards.find((c) => c.id === task.cardId)?.title : undefined}
+                cardTitle={task.cardId ? projectCards.find((c) => c.id === task.cardId)?.title : undefined}
                 onEdit={setEditingTask}
                 onDelete={handleDeleteTask}
                 onToggleStatus={handleToggleStatus}
@@ -121,7 +125,7 @@ export function TasksPanel() {
       {/* Modals */}
       <TaskDetailModal
         task={editingTask}
-        cards={cards}
+        cards={projectCards}
         isOpen={!!editingTask}
         onClose={() => setEditingTask(null)}
         onSave={updateTask}
@@ -129,7 +133,7 @@ export function TasksPanel() {
 
       <CreateTaskModal
         isOpen={isCreateModalOpen}
-        cards={cards}
+        cards={projectCards}
         selectedCardId={selectedCardId ?? undefined}
         onClose={() => setIsCreateModalOpen(false)}
         onSave={handleCreateTask}

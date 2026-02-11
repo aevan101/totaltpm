@@ -54,7 +54,7 @@ export function NotesPanel() {
   return (
     <div className="flex h-full overflow-hidden">
       {/* Notes List Sidebar */}
-      <div className="w-64 bg-neutral-50/80 flex flex-col shrink-0" style={{ padding: '5px' }}>
+      <div className="w-56 bg-neutral-50/80 flex flex-col shrink-0" style={{ padding: '5px' }}>
         {/* Header */}
         <div className="px-2 pt-2 pb-2 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-neutral-500 uppercase tracking-wide">Notes</h2>
@@ -97,7 +97,7 @@ export function NotesPanel() {
                   key={note.id}
                   onClick={() => setSelectedNoteId(note.id)}
                   className={cn(
-                    'w-full text-left px-3 py-2.5 rounded-md transition-all',
+                    'w-full text-left px-3 py-2 rounded-md transition-all',
                     selectedNoteId === note.id
                       ? 'bg-neutral-200 shadow-sm'
                       : 'hover:bg-neutral-200/60'

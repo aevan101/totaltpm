@@ -105,7 +105,7 @@ export function KanbanBoard() {
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Archive button */}
-      <div className="flex justify-end px-4 pt-3 pb-1">
+      <div className="flex justify-end px-3 pt-2 pb-0.5">
         <Button
           size="sm"
           variant="ghost"
@@ -121,7 +121,7 @@ export function KanbanBoard() {
 
       {/* Clear filter banner when card is selected */}
       {selectedCard && (
-        <div className="px-6 py-3 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
+        <div className="px-4 py-2 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-sm text-blue-700">
               Filtering by: <span className="font-medium">{selectedCard.title}</span>

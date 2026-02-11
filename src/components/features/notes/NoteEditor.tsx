@@ -169,8 +169,8 @@ export function NoteEditor({ note, cards, onSave, onDelete }: NoteEditorProps) {
   return (
     <div className="flex flex-col h-full overflow-hidden" style={{ padding: '5px' }}>
       {/* Header - subtle, Apple-like */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-100">
+        <div className="flex items-center gap-3">
           <span className="text-xs text-neutral-400">
             {formatDate(note.updatedAt)}
           </span>
@@ -298,7 +298,7 @@ export function NoteEditor({ note, cards, onSave, onDelete }: NoteEditorProps) {
       </div>
 
       {/* Title */}
-      <div className="px-4 pt-4">
+      <div className="px-4 pt-3">
         <input
           type="text"
           value={title}
@@ -309,7 +309,7 @@ export function NoteEditor({ note, cards, onSave, onDelete }: NoteEditorProps) {
       </div>
 
       {/* Content - Rich Text Editor */}
-      <div className="flex-1 px-4 py-3 overflow-y-auto overflow-x-hidden">
+      <div className="flex-1 px-4 py-2 overflow-y-auto overflow-x-hidden">
         <div
           ref={editorRef}
           contentEditable

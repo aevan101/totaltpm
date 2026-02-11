@@ -123,11 +123,11 @@ function Dashboard() {
   const { isFullscreen, toggleFullscreen } = useFullscreen();
 
   return (
-    <div className="relative flex h-full p-6 gap-4 bg-neutral-100 border-[20px] border-transparent">
+    <div className="relative flex h-full p-3 gap-3 bg-neutral-100 border-[10px] border-transparent">
       {/* Fullscreen Toggle Button */}
       <button
         onClick={toggleFullscreen}
-        className="absolute top-2 right-2 p-2 rounded-md bg-white/80 hover:bg-white text-neutral-500 hover:text-neutral-700 transition-colors shadow-sm"
+        className="absolute top-1 right-1 z-10 p-2 rounded-md bg-white/80 hover:bg-white text-neutral-500 hover:text-neutral-700 transition-colors shadow-sm"
         title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
       >
         {isFullscreen ? (
@@ -142,7 +142,7 @@ function Dashboard() {
       </button>
 
       {/* Left Column - Project Selector + Tasks */}
-      <div className="w-[30%] shrink-0 flex flex-col gap-2">
+      <div className="w-[30%] shrink-0 flex flex-col gap-1.5">
         {/* Project Selector */}
         <div style={{ marginTop: '1px' }}>
           <ProjectSelector />
@@ -154,7 +154,7 @@ function Dashboard() {
       </div>
 
       {/* Right Column - Kanban + Notes stacked */}
-      <div className="flex-1 min-w-0 flex flex-col gap-4">
+      <div className="flex-1 min-w-0 flex flex-col gap-2">
         {/* Kanban Board - aligned with project selector */}
         <div className="h-[45%] bg-white rounded-md overflow-hidden shadow-sm border-2 border-white">
           <KanbanBoard />

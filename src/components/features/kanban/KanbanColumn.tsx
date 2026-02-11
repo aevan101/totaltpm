@@ -96,7 +96,7 @@ export function KanbanColumn({
       onDrop={handleDrop}
     >
       {/* Column Header */}
-      <div className="px-5 py-4 flex items-center justify-between">
+      <div className="px-4 py-2.5 flex items-center justify-between">
         {isEditing ? (
           <input
             type="text"
@@ -127,7 +127,7 @@ export function KanbanColumn({
 
       {/* Add Card Form */}
       {isAddingCard && (
-        <div className="px-5 pb-3">
+        <div className="px-4 pb-2">
           <div className="flex flex-col gap-2">
             <Input
               value={newCardTitle}
@@ -162,7 +162,7 @@ export function KanbanColumn({
       )}
 
       {/* Cards */}
-      <div className="flex-1 px-5 pb-5 min-h-[100px]" style={{ overflowY: 'auto', overflowX: 'hidden' }}>
+      <div className="flex-1 px-3 pb-3 min-h-[60px]" style={{ overflowY: 'auto', overflowX: 'hidden' }}>
         <div className="flex flex-col" style={{ paddingTop: '5px', gap: '6px' }}>
           {cards.map((card) => (
             <KanbanCard

@@ -23,9 +23,9 @@ export function TaskItem({ task, cardTitle, onEdit, onDelete, onToggleStatus }: 
         'bg-white border border-neutral-200 rounded-md transition-all hover:border-neutral-300 group overflow-hidden',
         task.status === 'done' && 'opacity-60'
       )}
-      style={{ padding: '24px' }}
+      style={{ padding: '10px 14px' }}
     >
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3">
         {/* Checkbox */}
         <button
           onClick={() => onToggleStatus(task.id)}
@@ -79,10 +79,10 @@ export function TaskItem({ task, cardTitle, onEdit, onDelete, onToggleStatus }: 
           </div>
 
           {task.description && (
-            <p className="mt-2 text-sm text-neutral-500 line-clamp-2 leading-relaxed">{task.description}</p>
+            <p className="mt-1 text-sm text-neutral-500 line-clamp-2 leading-snug">{task.description}</p>
           )}
 
-          <div className="mt-3 flex items-center gap-2 flex-wrap">
+          <div className="mt-1.5 flex items-center gap-2 flex-wrap">
             <Badge className={STATUS_COLORS[task.status]}>
               {TASK_STATUS_LABELS[task.status]}
             </Badge>
