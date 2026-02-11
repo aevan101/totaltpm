@@ -2,7 +2,7 @@
 
 import { useMemo, useCallback } from 'react';
 import { useApp } from '@/context/AppContext';
-import type { TaskStatus, TaskPriority } from '@/types';
+import type { TaskStatus, TaskPriority, LinkAttachment } from '@/types';
 
 interface TaskFilters {
   status?: TaskStatus | 'all';
@@ -51,6 +51,11 @@ export function useTasks(filters?: TaskFilters) {
       );
     }
 
+    // Sort by priority (P0 first) when filtering by a deliverable, otherwise by newest first
+    if (filters?.cardId) {
+      const priorityOrder: Record<string, number> = { p0: 0, p1: 1, p2: 2, p3: 3, p4: 4 };
+      return filtered.sort((a, b) => (priorityOrder[a.priority] ?? 5) - (priorityOrder[b.priority] ?? 5) || b.createdAt - a.createdAt);
+    }
     return filtered.sort((a, b) => b.createdAt - a.createdAt);
   }, [tasks, currentProjectId, filters?.status, filters?.priority, filters?.search, filters?.cardId]);
 
@@ -73,7 +78,7 @@ export function useTasks(filters?: TaskFilters) {
     return { total, completed, percentage };
   }, [tasks, currentProjectId]);
 
-  const addTask = (title: string, data?: { description?: string; priority?: TaskPriority; dueDate?: number; cardId?: string | null }) => {
+  const addTask = (title: string, data?: { description?: string; priority?: TaskPriority; dueDate?: number; cardId?: string | null; links?: LinkAttachment[] }) => {
     if (currentProjectId) {
       return createTask(currentProjectId, title, data);
     }

@@ -42,12 +42,13 @@ export function TaskList() {
     }
   };
 
-  const handleCreateTask = (data: { title: string; description?: string; priority: TaskPriority; dueDate?: number }) => {
+  const handleCreateTask = (data: { title: string; description?: string; priority: TaskPriority; dueDate?: number; cardId?: string; links?: import('@/types').LinkAttachment[] }) => {
     addTask(data.title, {
       description: data.description,
       priority: data.priority,
       dueDate: data.dueDate,
-      cardId: selectedCardId,
+      cardId: data.cardId,
+      links: data.links,
     });
   };
 
@@ -144,7 +145,8 @@ export function TaskList() {
 
       <CreateTaskModal
         isOpen={isCreateModalOpen}
-        linkedCardTitle={selectedCard?.title}
+        cards={cards}
+        selectedCardId={selectedCardId ?? undefined}
         onClose={() => setIsCreateModalOpen(false)}
         onSave={handleCreateTask}
       />

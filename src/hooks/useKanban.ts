@@ -19,6 +19,8 @@ export function useKanban() {
     createCard,
     updateCard,
     deleteCard,
+    archiveCard,
+    restoreCard,
     moveCard,
   } = useApp();
 
@@ -32,8 +34,18 @@ export function useKanban() {
 
   const getColumnCards = useMemo(
     () => (columnId: string) =>
-      sortByOrder(cards.filter((c) => c.columnId === columnId)),
+      sortByOrder(cards.filter((c) => c.columnId === columnId && !c.archived)),
     [cards]
+  );
+
+  const archivedCards = useMemo(
+    () => {
+      const projectColumnIds = projectColumns.map((c) => c.id);
+      return cards
+        .filter((c) => c.archived && projectColumnIds.includes(c.columnId))
+        .sort((a, b) => (b.archivedAt ?? 0) - (a.archivedAt ?? 0));
+    },
+    [cards, projectColumns]
   );
 
   // Get progress for a specific card
@@ -75,6 +87,9 @@ export function useKanban() {
     addCard,
     updateCard,
     deleteCard,
+    archiveCard,
+    restoreCard,
+    archivedCards,
     moveCard,
   };
 }

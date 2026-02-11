@@ -41,7 +41,7 @@ export function TaskDetailModal({ task, cards, isOpen, onClose, onSave }: TaskDe
         description: description.trim() || undefined,
         status,
         priority,
-        dueDate: dueDate ? new Date(dueDate).getTime() : undefined,
+        dueDate: dueDate ? new Date(dueDate + 'T12:00:00').getTime() : undefined,
         cardId,
         links: links.length > 0 ? links : undefined,
       });

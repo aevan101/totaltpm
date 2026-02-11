@@ -20,15 +20,15 @@ export function TaskItem({ task, cardTitle, onEdit, onDelete, onToggleStatus }: 
   return (
     <div
       className={cn(
-        'bg-white border border-neutral-200 rounded-md p-5 transition-all hover:border-neutral-300 group',
+        'bg-white border border-neutral-200 rounded-md transition-all hover:border-neutral-300 group overflow-hidden',
         task.status === 'done' && 'opacity-60'
       )}
+      style={{ padding: '24px' }}
     >
       <div className="flex items-start gap-4">
         {/* Checkbox */}
         <button
           onClick={() => onToggleStatus(task.id)}
-          style={{ marginLeft: '6px', marginTop: '3px' }}
           className={cn(
             'mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors',
             task.status === 'done'

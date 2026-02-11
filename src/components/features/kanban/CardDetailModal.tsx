@@ -38,7 +38,7 @@ export function CardDetailModal({ card, isOpen, onClose, onSave }: CardDetailMod
         title: title.trim(),
         description: description.trim() || undefined,
         priority,
-        dueDate: dueDate ? new Date(dueDate).getTime() : undefined,
+        dueDate: dueDate ? new Date(dueDate + 'T12:00:00').getTime() : undefined,
       });
       onClose();
     }

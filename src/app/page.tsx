@@ -142,7 +142,7 @@ function Dashboard() {
       </button>
 
       {/* Left Column - Project Selector + Tasks */}
-      <div className="w-[20%] shrink-0 flex flex-col gap-2">
+      <div className="w-[30%] shrink-0 flex flex-col gap-2">
         {/* Project Selector */}
         <div style={{ marginTop: '1px' }}>
           <ProjectSelector />

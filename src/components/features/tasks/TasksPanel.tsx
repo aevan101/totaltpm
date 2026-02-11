@@ -40,12 +40,13 @@ export function TasksPanel() {
     }
   };
 
-  const handleCreateTask = (data: { title: string; description?: string; priority: TaskPriority; dueDate?: number }) => {
+  const handleCreateTask = (data: { title: string; description?: string; priority: TaskPriority; dueDate?: number; cardId?: string; links?: import('@/types').LinkAttachment[] }) => {
     addTask(data.title, {
       description: data.description,
       priority: data.priority,
       dueDate: data.dueDate,
-      cardId: selectedCardId,  // Auto-link to selected card
+      cardId: data.cardId,
+      links: data.links,
     });
   };
 
@@ -57,9 +58,9 @@ export function TasksPanel() {
   ];
 
   return (
-    <div className="flex flex-col h-full bg-white" style={{ padding: '5px' }}>
+    <div className="flex flex-col h-full bg-white">
       {/* Header */}
-      <div className="pl-[45px] pr-3 py-4 border-b border-neutral-200 flex items-center justify-between gap-3">
+      <div className="px-6 py-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <h2 className="text-base font-semibold text-neutral-900">Tasks</h2>
           {selectedCard && (
@@ -72,23 +73,21 @@ export function TasksPanel() {
       </div>
 
       {/* Filters */}
-      <div className="pl-[45px] pr-3 py-3 border-b border-neutral-200 flex gap-3">
+      <div className="px-6 py-3 flex flex-col gap-3">
         <Input
           value={searchFilter}
           onChange={(e) => setSearchFilter(e.target.value)}
           placeholder="Search..."
-          className="flex-1"
         />
         <Select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as TaskStatus | 'all')}
           options={statusOptions}
-          className="w-32"
         />
       </div>
 
       {/* Task List */}
-      <div className="flex-1 overflow-y-auto pl-[45px] pr-3 py-4">
+      <div className="flex-1 overflow-y-auto px-6 py-4">
         {tasks.length === 0 ? (
           <div className="text-center text-sm text-neutral-400 py-12">
             {searchFilter || statusFilter !== 'all'
@@ -124,7 +123,8 @@ export function TasksPanel() {
 
       <CreateTaskModal
         isOpen={isCreateModalOpen}
-        linkedCardTitle={selectedCard?.title}
+        cards={cards}
+        selectedCardId={selectedCardId ?? undefined}
         onClose={() => setIsCreateModalOpen(false)}
         onSave={handleCreateTask}
       />

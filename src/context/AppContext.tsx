@@ -44,6 +44,8 @@ interface AppContextType {
   createCard: (columnId: string, title: string, description?: string, priority?: TaskPriority, dueDate?: number) => KanbanCard;
   updateCard: (id: string, updates: Partial<Pick<KanbanCard, 'title' | 'description' | 'priority' | 'dueDate' | 'columnId' | 'order'>>) => void;
   deleteCard: (id: string) => void;
+  archiveCard: (id: string) => void;
+  restoreCard: (id: string) => void;
   moveCard: (cardId: string, targetColumnId: string, newOrder: number) => void;
 
   // Task actions
@@ -287,6 +289,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [setCards, setTasks, setNotes, selectedCardId]
   );
 
+  const archiveCard = useCallback(
+    (id: string) => {
+      const now = Date.now();
+      setCards((prev) =>
+        prev.map((c) =>
+          c.id === id ? { ...c, archived: true, archivedAt: now, updatedAt: now } : c
+        )
+      );
+      // Unlink tasks and notes
+      setTasks((prev) => prev.map((t) => t.cardId === id ? { ...t, cardId: null } : t));
+      setNotes((prev) => prev.map((n) => n.cardId === id ? { ...n, cardId: null } : n));
+      if (selectedCardId === id) setSelectedCardId(null);
+    },
+    [setCards, setTasks, setNotes, selectedCardId]
+  );
+
+  const restoreCard = useCallback(
+    (id: string) => {
+      setCards((prev) =>
+        prev.map((c) =>
+          c.id === id
+            ? { ...c, archived: false, archivedAt: undefined, updatedAt: Date.now() }
+            : c
+        )
+      );
+    },
+    [setCards]
+  );
+
   const moveCard = useCallback(
     (cardId: string, targetColumnId: string, newOrder: number) => {
       setCards((prev) => {
@@ -429,6 +460,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       createCard,
       updateCard,
       deleteCard,
+      archiveCard,
+      restoreCard,
       moveCard,
       createTask,
       updateTask,
@@ -460,6 +493,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       createCard,
       updateCard,
       deleteCard,
+      archiveCard,
+      restoreCard,
       moveCard,
       createTask,
       updateTask,

@@ -20,6 +20,7 @@ interface KanbanCardProps {
   cardTasks?: Task[];
   onEdit: (card: KanbanCardType) => void;
   onDelete: (id: string) => void;
+  onArchive: (id: string) => void;
   onSelect?: (card: KanbanCardType) => void;
   onDragStart: (e: DragEvent, card: KanbanCardType) => void;
 }
@@ -36,7 +37,7 @@ function getDaysInColumn(columnChangedAt: number | undefined): { days: number; l
   return { days: diffDays, label: `${diffDays} days` };
 }
 
-export function KanbanCard({ card, isSelected, taskProgress, cardTasks = [], onEdit, onDelete, onSelect, onDragStart }: KanbanCardProps) {
+export function KanbanCard({ card, isSelected, taskProgress, cardTasks = [], onEdit, onDelete, onArchive, onSelect, onDragStart }: KanbanCardProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [showStatus, setShowStatus] = useState(false);
 
@@ -76,7 +77,7 @@ export function KanbanCard({ card, isSelected, taskProgress, cardTasks = [], onE
       onDragEnd={handleDragEnd}
       onClick={handleClick}
       className={cn(
-        'bg-white border-2 rounded-md cursor-pointer w-60 mx-auto',
+        'bg-white border-2 rounded-md cursor-pointer w-full',
         'hover:border-neutral-200 transition-all group',
         'shadow-sm hover:shadow',
         isSelected ? 'border-blue-500 ring-2 ring-blue-100' : 'border-white',
@@ -84,9 +85,9 @@ export function KanbanCard({ card, isSelected, taskProgress, cardTasks = [], onE
       )}
       style={{ padding: '6px 10px', overflow: 'hidden' }}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium text-neutral-900 leading-relaxed truncate">{card.title}</h4>
+      <div className="relative">
+        <div>
+          <h4 className="text-sm font-medium text-neutral-900 leading-relaxed pr-2">{card.title}</h4>
           <div className="flex items-center gap-1.5 mt-1">
             <Badge className={cn(PRIORITY_COLORS[card.priority ?? 'p2'], 'text-[10px] px-1.5 py-0')}>
               {TASK_PRIORITY_LABELS[card.priority ?? 'p2']}
@@ -112,12 +113,12 @@ export function KanbanCard({ card, isSelected, taskProgress, cardTasks = [], onE
                 'text-xs truncate',
                 isOverdue ? 'text-red-600 font-medium' : 'text-neutral-500'
               )}>
-                {isOverdue ? 'Overdue: ' : 'Due: '}{new Date(card.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                {isOverdue ? 'Overdue: ' : 'Due: '}{new Date(card.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}
               </span>
             </div>
           )}
         </div>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        <div className="absolute top-0 right-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white rounded-md">
           <IconButton
             variant="ghost"
             size="sm"
@@ -136,6 +137,19 @@ export function KanbanCard({ card, isSelected, taskProgress, cardTasks = [], onE
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+            </svg>
+          </IconButton>
+          <IconButton
+            variant="ghost"
+            size="sm"
+            label="Archive card"
+            onClick={(e) => {
+              e.stopPropagation();
+              onArchive(card.id);
+            }}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
             </svg>
           </IconButton>
           <IconButton
