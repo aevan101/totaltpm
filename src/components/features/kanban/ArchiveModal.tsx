@@ -15,9 +15,7 @@ interface ArchiveModalProps {
 
 export function ArchiveModal({ isOpen, archivedCards, onClose, onRestore, onDelete }: ArchiveModalProps) {
   const handleDelete = (cardId: string) => {
-    if (confirm('Permanently delete this card? This cannot be undone.')) {
-      onDelete(cardId);
-    }
+    onDelete(cardId);
   };
 
   return (
@@ -36,6 +34,9 @@ export function ArchiveModal({ isOpen, archivedCards, onClose, onRestore, onDele
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h4 className="text-sm font-medium text-neutral-900 truncate">{card.title}</h4>
+                  <Badge className={card.archiveReason === 'deleted' ? 'bg-red-50 text-red-600' : 'bg-neutral-100 text-neutral-500'}>
+                    {card.archiveReason === 'deleted' ? 'Deleted' : 'Archived'}
+                  </Badge>
                   {card.priority && (
                     <Badge className={PRIORITY_COLORS[card.priority]}>
                       {TASK_PRIORITY_LABELS[card.priority]}
@@ -43,7 +44,9 @@ export function ArchiveModal({ isOpen, archivedCards, onClose, onRestore, onDele
                   )}
                 </div>
                 {card.archivedAt && (
-                  <p className="text-xs text-neutral-400 mt-1">Archived {formatDate(card.archivedAt)}</p>
+                  <p className="text-xs text-neutral-400 mt-1">
+                    {card.archiveReason === 'deleted' ? 'Deleted' : 'Archived'} {formatDate(card.archivedAt)}
+                  </p>
                 )}
               </div>
               <div className="flex items-center gap-2 shrink-0">

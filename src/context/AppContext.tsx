@@ -279,7 +279,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteCard = useCallback(
     (id: string) => {
-      setCards((prev) => prev.filter((c) => c.id !== id));
+      // Soft-delete: send to archive with reason 'deleted'
+      const now = Date.now();
+      setCards((prev) =>
+        prev.map((c) =>
+          c.id === id ? { ...c, archived: true, archivedAt: now, archiveReason: 'deleted', updatedAt: now } : c
+        )
+      );
       // Unlink tasks and notes (don't delete them)
       setTasks((prev) => prev.map((t) => t.cardId === id ? { ...t, cardId: null } : t));
       setNotes((prev) => prev.map((n) => n.cardId === id ? { ...n, cardId: null } : n));
@@ -294,7 +300,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const now = Date.now();
       setCards((prev) =>
         prev.map((c) =>
-          c.id === id ? { ...c, archived: true, archivedAt: now, updatedAt: now } : c
+          c.id === id ? { ...c, archived: true, archivedAt: now, archiveReason: 'archived', updatedAt: now } : c
         )
       );
       // Unlink tasks and notes
@@ -310,7 +316,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setCards((prev) =>
         prev.map((c) =>
           c.id === id
-            ? { ...c, archived: false, archivedAt: undefined, updatedAt: Date.now() }
+            ? { ...c, archived: false, archivedAt: undefined, archiveReason: undefined, updatedAt: Date.now() }
             : c
         )
       );

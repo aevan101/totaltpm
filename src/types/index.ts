@@ -29,6 +29,7 @@ export interface KanbanCard {
   dueDate?: number;
   archived?: boolean;
   archivedAt?: number;
+  archiveReason?: 'archived' | 'deleted';
 }
 
 // Link attachment
