@@ -121,9 +121,11 @@ export function NoteEditor({ note, cards, onSave, onDelete }: NoteEditorProps) {
   };
 
   const handleDelete = () => {
-    if (confirm('Are you sure you want to delete this note?')) {
-      onDelete(note.id);
+    // Clear any pending save so it doesn't fire after deletion
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
+    onDelete(note.id);
   };
 
   const execCommand = (command: string, value?: string) => {
