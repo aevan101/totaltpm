@@ -137,6 +137,48 @@ fn run_npm_install(project_dir: &str) -> bool {
     }
 }
 
+/// Get the current git HEAD commit hash.
+fn get_git_head(project_dir: &str) -> Option<String> {
+    let enhanced_path = get_enhanced_path();
+    Command::new("git")
+        .args(["rev-parse", "HEAD"])
+        .current_dir(project_dir)
+        .env("PATH", &enhanced_path)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+}
+
+/// Check if .next/ was built from the current commit.
+fn is_build_current(project_dir: &str) -> bool {
+    let marker = std::path::Path::new(project_dir).join(".next/.build-commit");
+    let current_head = get_git_head(project_dir);
+    match (std::fs::read_to_string(&marker).ok(), current_head) {
+        (Some(built), Some(head)) => {
+            let matches = built.trim() == head.trim();
+            if matches {
+                println!("[Total TPM] .next/ matches HEAD ({})", head.trim());
+            } else {
+                println!("[Total TPM] .next/ stale: built={}, HEAD={}", built.trim(), head.trim());
+            }
+            matches
+        }
+        _ => false,
+    }
+}
+
+/// Save the current HEAD hash as the build marker.
+fn save_build_marker(project_dir: &str) {
+    if let Some(head) = get_git_head(project_dir) {
+        let marker = std::path::Path::new(project_dir).join(".next/.build-commit");
+        let _ = std::fs::write(&marker, &head);
+        println!("[Total TPM] Saved build marker: {}", head.trim());
+    }
+}
+
 /// Build the Next.js app for production.
 fn run_next_build(project_dir: &str) -> bool {
     let enhanced_path = get_enhanced_path();
@@ -153,6 +195,7 @@ fn run_next_build(project_dir: &str) -> bool {
         Ok(output) => {
             if output.status.success() {
                 println!("[Total TPM] Build complete");
+                save_build_marker(project_dir);
                 true
             } else {
                 let stderr = String::from_utf8_lossy(&output.stderr);
@@ -322,9 +365,9 @@ pub fn run() {
                         send_status(&app_handle, "Dependencies updated");
                     }
 
-                    // Step 3: Build only if code or deps changed
+                    // Step 3: Build if code changed, deps changed, .next missing, or .next is stale
                     let next_dir = std::path::Path::new(&dir).join(".next");
-                    let needs_build = code_changed || deps_installed || !next_dir.exists();
+                    let needs_build = code_changed || deps_installed || !next_dir.exists() || !is_build_current(&dir);
 
                     if needs_build {
                         send_status(&app_handle, "Building application...");
