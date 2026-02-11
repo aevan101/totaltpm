@@ -8,6 +8,7 @@ Welcome to the **Total TPM** repository. This is a Next.js-based project designe
 - [Getting Started](#getting-started)
 - [Installation](#installation)
 - [Running the Application](#running-the-application)
+- [Native macOS Desktop App](#native-macos-desktop-app)
 - [Build and Deployment](#build-and-deployment)
 - [Available Scripts](#available-scripts)
 
@@ -62,6 +63,85 @@ Once the server is running, open your browser and navigate to [http://localhost:
 
 ---
 
+## Native macOS Desktop App
+
+Total TPM can run as a native macOS desktop application using [Tauri v2](https://v2.tauri.app). The app launches from your Dock like any other macOS app — it automatically pulls the latest code from GitHub, installs dependencies if needed, builds and starts the Next.js server, and displays the app in a native window.
+
+### Prerequisites
+
+In addition to Node.js, you need:
+
+1. **Rust toolchain** — Install via [rustup](https://rustup.rs/):
+
+    ```bash
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    ```
+
+2. **Xcode Command Line Tools** (macOS):
+
+    ```bash
+    xcode-select --install
+    ```
+
+### Development Mode
+
+Run the app in a native window with hot reloading:
+
+```bash
+npm run tauri:dev
+```
+
+This starts the Next.js dev server and opens the app in a Tauri window. Code changes will hot-reload just like in the browser.
+
+### Building the Desktop App
+
+To build a production `.app` bundle:
+
+```bash
+npm run tauri:build
+```
+
+The build output is located at:
+
+```
+src-tauri/target/release/bundle/macos/Total TPM.app
+src-tauri/target/release/bundle/dmg/Total TPM_0.1.0_aarch64.dmg
+```
+
+### Installing to Applications
+
+Copy the built app to your Applications folder:
+
+```bash
+cp -R "src-tauri/target/release/bundle/macos/Total TPM.app" /Applications/
+```
+
+Or open the `.dmg` file and drag the app to Applications.
+
+### What Happens on Launch
+
+When you open Total TPM from the Dock, it runs through this sequence automatically:
+
+1. **Git pull** — Pulls the latest code from `origin/main`
+2. **npm install** — Runs only if `node_modules` is missing or `package-lock.json` has changed
+3. **Next.js build** — Builds the production app
+4. **Server start** — Starts the Next.js production server on an available port (starting from 3000)
+5. **Window show** — Once the server is ready, the app window appears
+
+When you close the app, the server process is automatically cleaned up.
+
+### Configuration
+
+- The app looks for the project in `~/Library/Mobile Documents/com~apple~CloudDocs/Documents/VS Code/Total TPM` by default
+- Override the project path by setting the `TOTAL_TPM_PROJECT_DIR` environment variable
+- The app icon can be customized by placing your icon file in the project and running:
+
+    ```bash
+    npx tauri icon path/to/your-icon.png
+    ```
+
+---
+
 ## Build and Deployment
 
 To create a production build of the application, use the following command:
@@ -82,7 +162,7 @@ This will launch the application in production mode, and you can access it via [
 
 ## Tech Stack
 
-The stack is Next.js (React + TypeScript) with Tailwind CSS, all running on Node.js. There are no other languages involved — no Python backend, no SQL database, no native code.
+The stack is Next.js (React + TypeScript) with Tailwind CSS, all running on Node.js. The native desktop wrapper is built with [Tauri v2](https://v2.tauri.app) (Rust), which uses the system WebKit engine to render the app in a lightweight native window (~5MB overhead).
 
 ## Backend Data Storage
 
@@ -158,10 +238,12 @@ This project uses **TypeScript** and **TailwindCSS** for styling:
 
 The `package.json` includes the following scripts that you can use during development:
 
-- `npm run dev` : Runs the application in development mode.
+- `npm run dev` : Runs the application in development mode (browser).
 - `npm run build` : Builds the application for production.
 - `npm run start` : Starts a production build of the application.
 - `npm run lint` : Lints your codebase for any errors.
+- `npm run tauri:dev` : Runs the app in a native Tauri window with hot reloading.
+- `npm run tauri:build` : Builds a production macOS `.app` bundle and `.dmg` installer.
 
 ---
 
