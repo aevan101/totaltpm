@@ -280,11 +280,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteCard = useCallback(
     (id: string) => {
+      // Capture linked task/note IDs before unlinking
+      const linkedTaskIds = tasks.filter((t) => t.cardId === id).map((t) => t.id);
+      const linkedNoteIds = notes.filter((n) => n.cardId === id).map((n) => n.id);
       // Soft-delete: send to archive with reason 'deleted'
       const now = Date.now();
       setCards((prev) =>
         prev.map((c) =>
-          c.id === id ? { ...c, archived: true, archivedAt: now, archiveReason: 'deleted', updatedAt: now } : c
+          c.id === id ? { ...c, archived: true, archivedAt: now, archiveReason: 'deleted', linkedTaskIds, linkedNoteIds, updatedAt: now } : c
         )
       );
       // Unlink tasks and notes (don't delete them)
@@ -293,7 +296,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // Clear selection if deleted card was selected
       if (selectedCardId === id) setSelectedCardId(null);
     },
-    [setCards, setTasks, setNotes, selectedCardId]
+    [setCards, setTasks, setNotes, tasks, notes, selectedCardId]
   );
 
   const permanentDeleteCard = useCallback(
@@ -305,10 +308,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const archiveCard = useCallback(
     (id: string) => {
+      // Capture linked task/note IDs before unlinking
+      const linkedTaskIds = tasks.filter((t) => t.cardId === id).map((t) => t.id);
+      const linkedNoteIds = notes.filter((n) => n.cardId === id).map((n) => n.id);
       const now = Date.now();
       setCards((prev) =>
         prev.map((c) =>
-          c.id === id ? { ...c, archived: true, archivedAt: now, archiveReason: 'archived', updatedAt: now } : c
+          c.id === id ? { ...c, archived: true, archivedAt: now, archiveReason: 'archived', linkedTaskIds, linkedNoteIds, updatedAt: now } : c
         )
       );
       // Unlink tasks and notes
@@ -316,20 +322,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setNotes((prev) => prev.map((n) => n.cardId === id ? { ...n, cardId: null } : n));
       if (selectedCardId === id) setSelectedCardId(null);
     },
-    [setCards, setTasks, setNotes, selectedCardId]
+    [setCards, setTasks, setNotes, tasks, notes, selectedCardId]
   );
 
   const restoreCard = useCallback(
     (id: string) => {
+      // Find the card to get its stored linked IDs
+      const card = cards.find((c) => c.id === id);
+      const linkedTaskIds = card?.linkedTaskIds ?? [];
+      const linkedNoteIds = card?.linkedNoteIds ?? [];
+      // Restore card and clear archive fields
       setCards((prev) =>
         prev.map((c) =>
           c.id === id
-            ? { ...c, archived: false, archivedAt: undefined, archiveReason: undefined, updatedAt: Date.now() }
+            ? { ...c, archived: false, archivedAt: undefined, archiveReason: undefined, linkedTaskIds: undefined, linkedNoteIds: undefined, updatedAt: Date.now() }
             : c
         )
       );
+      // Re-link tasks and notes
+      if (linkedTaskIds.length > 0) {
+        setTasks((prev) => prev.map((t) => linkedTaskIds.includes(t.id) ? { ...t, cardId: id } : t));
+      }
+      if (linkedNoteIds.length > 0) {
+        setNotes((prev) => prev.map((n) => linkedNoteIds.includes(n.id) ? { ...n, cardId: id } : n));
+      }
     },
-    [setCards]
+    [cards, setCards, setTasks, setNotes]
   );
 
   const moveCard = useCallback(

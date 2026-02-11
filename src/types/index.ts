@@ -30,6 +30,8 @@ export interface KanbanCard {
   archived?: boolean;
   archivedAt?: number;
   archiveReason?: 'archived' | 'deleted';
+  linkedTaskIds?: string[];
+  linkedNoteIds?: string[];
 }
 
 // Link attachment
