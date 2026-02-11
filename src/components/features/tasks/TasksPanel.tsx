@@ -50,13 +50,15 @@ export function TasksPanel() {
     }
   };
 
-  const handleCreateTask = (data: { title: string; description?: string; priority: TaskPriority; dueDate?: number; cardId?: string; links?: import('@/types').LinkAttachment[] }) => {
+  const handleCreateTask = (data: { title: string; description?: string; status?: import('@/types').TaskStatus; priority: TaskPriority; dueDate?: number; cardId?: string; links?: import('@/types').LinkAttachment[]; comments?: string }) => {
     addTask(data.title, {
       description: data.description,
+      status: data.status,
       priority: data.priority,
       dueDate: data.dueDate,
       cardId: data.cardId,
       links: data.links,
+      comments: data.comments,
     });
   };
 

@@ -400,6 +400,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         description: data?.description,
         dueDate: data?.dueDate,
         cardId: data?.cardId ?? null,
+        links: data?.links,
+        comments: data?.comments,
         createdAt: now,
         updatedAt: now,
       };

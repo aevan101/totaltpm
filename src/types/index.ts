@@ -54,6 +54,7 @@ export interface Task {
   dueDate?: number;
   cardId?: string | null;  // Optional link to KanbanCard
   links?: LinkAttachment[];  // Attached links
+  comments?: string;  // Free-form notes/comments
   createdAt: number;
   updatedAt: number;
 }

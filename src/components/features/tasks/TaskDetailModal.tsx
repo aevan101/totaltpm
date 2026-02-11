@@ -21,6 +21,7 @@ export function TaskDetailModal({ task, cards, isOpen, onClose, onSave }: TaskDe
   const [dueDate, setDueDate] = useState('');
   const [cardId, setCardId] = useState<string | null>(null);
   const [links, setLinks] = useState<LinkAttachment[]>([]);
+  const [comments, setComments] = useState('');
 
   useEffect(() => {
     if (task) {
@@ -31,6 +32,7 @@ export function TaskDetailModal({ task, cards, isOpen, onClose, onSave }: TaskDe
       setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '');
       setCardId(task.cardId ?? null);
       setLinks(task.links ?? []);
+      setComments(task.comments ?? '');
     }
   }, [task]);
 
@@ -44,6 +46,7 @@ export function TaskDetailModal({ task, cards, isOpen, onClose, onSave }: TaskDe
         dueDate: dueDate ? new Date(dueDate + 'T12:00:00').getTime() : undefined,
         cardId,
         links: links.length > 0 ? links : undefined,
+        comments: comments.trim() || undefined,
       });
       onClose();
     }
@@ -113,13 +116,20 @@ export function TaskDetailModal({ task, cards, isOpen, onClose, onSave }: TaskDe
             options={cardOptions}
           />
         </div>
+        <Textarea
+          label="Comments"
+          value={comments}
+          onChange={(e) => setComments(e.target.value)}
+          placeholder="Add notes or comments..."
+          rows={2}
+        />
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-1.5">
             Attached Links
           </label>
           <LinksEditor links={links} onChange={setLinks} />
         </div>
-        <div className="flex justify-end gap-2 pt-2 sticky bottom-0 bg-white">
+        <div className="flex justify-end gap-3 pt-2">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>

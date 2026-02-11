@@ -78,7 +78,7 @@ export function useTasks(filters?: TaskFilters) {
     return { total, completed, percentage };
   }, [tasks, currentProjectId]);
 
-  const addTask = (title: string, data?: { description?: string; priority?: TaskPriority; dueDate?: number; cardId?: string | null; links?: LinkAttachment[] }) => {
+  const addTask = (title: string, data?: { description?: string; status?: TaskStatus; priority?: TaskPriority; dueDate?: number; cardId?: string | null; links?: LinkAttachment[]; comments?: string }) => {
     if (currentProjectId) {
       return createTask(currentProjectId, title, data);
     }
