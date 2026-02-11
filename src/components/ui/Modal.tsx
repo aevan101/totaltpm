@@ -54,7 +54,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
         tabIndex={-1}
         className={cn(
           'relative bg-white rounded-md shadow-xl',
-          'max-h-[90vh] overflow-y-auto',
+          'max-h-[85vh] flex flex-col',
           'm-4',
           {
             'w-full max-w-sm': size === 'sm',
@@ -65,13 +65,13 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
         style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}
       >
         {title && (
-          <div style={{ padding: '20px 24px 16px' }}>
+          <div className="shrink-0" style={{ padding: '20px 24px 16px' }}>
             <h2 id="modal-title" className="text-lg font-semibold text-neutral-900">
               {title}
             </h2>
           </div>
         )}
-        <div style={{ padding: '0 24px 24px' }}>{children}</div>
+        <div className="flex-1 overflow-y-auto min-h-0" style={{ padding: '0 24px 24px' }}>{children}</div>
       </div>
     </div>
   );

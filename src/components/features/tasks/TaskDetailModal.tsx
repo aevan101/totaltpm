@@ -71,7 +71,7 @@ export function TaskDetailModal({ task, cards, isOpen, onClose, onSave }: TaskDe
           e.preventDefault();
           handleSave();
         }}
-        className="flex flex-col gap-4"
+        className="flex flex-col gap-3"
       >
         <Input
           label="Title"
@@ -85,9 +85,9 @@ export function TaskDetailModal({ task, cards, isOpen, onClose, onSave }: TaskDe
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Add a description..."
-          rows={3}
+          rows={2}
         />
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-4 gap-3">
           <Select
             label="Status"
             value={status}
@@ -100,26 +100,26 @@ export function TaskDetailModal({ task, cards, isOpen, onClose, onSave }: TaskDe
             onChange={(e) => setPriority(e.target.value as TaskPriority)}
             options={priorityOptions}
           />
+          <Input
+            type="date"
+            label="Due Date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+          />
+          <Select
+            label="Deliverable"
+            value={cardId ?? ''}
+            onChange={(e) => setCardId(e.target.value || null)}
+            options={cardOptions}
+          />
         </div>
-        <Input
-          type="date"
-          label="Due Date"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-        />
-        <Select
-          label="Link to Deliverable"
-          value={cardId ?? ''}
-          onChange={(e) => setCardId(e.target.value || null)}
-          options={cardOptions}
-        />
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-1.5">
             Attached Links
           </label>
           <LinksEditor links={links} onChange={setLinks} />
         </div>
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex justify-end gap-2 pt-2 sticky bottom-0 bg-white">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
