@@ -44,6 +44,7 @@ interface AppContextType {
   createCard: (columnId: string, title: string, description?: string, priority?: TaskPriority, dueDate?: number) => KanbanCard;
   updateCard: (id: string, updates: Partial<Pick<KanbanCard, 'title' | 'description' | 'priority' | 'dueDate' | 'columnId' | 'order'>>) => void;
   deleteCard: (id: string) => void;
+  permanentDeleteCard: (id: string) => void;
   archiveCard: (id: string) => void;
   restoreCard: (id: string) => void;
   moveCard: (cardId: string, targetColumnId: string, newOrder: number) => void;
@@ -295,6 +296,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [setCards, setTasks, setNotes, selectedCardId]
   );
 
+  const permanentDeleteCard = useCallback(
+    (id: string) => {
+      setCards((prev) => prev.filter((c) => c.id !== id));
+    },
+    [setCards]
+  );
+
   const archiveCard = useCallback(
     (id: string) => {
       const now = Date.now();
@@ -466,6 +474,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       createCard,
       updateCard,
       deleteCard,
+      permanentDeleteCard,
       archiveCard,
       restoreCard,
       moveCard,
@@ -499,6 +508,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       createCard,
       updateCard,
       deleteCard,
+      permanentDeleteCard,
       archiveCard,
       restoreCard,
       moveCard,

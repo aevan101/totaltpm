@@ -22,6 +22,7 @@ export function KanbanBoard() {
     addCard,
     updateCard,
     deleteCard,
+    permanentDeleteCard,
     archiveCard,
     restoreCard,
     archivedCards,
@@ -178,7 +179,7 @@ export function KanbanBoard() {
         archivedCards={archivedCards}
         onClose={() => setIsArchiveOpen(false)}
         onRestore={restoreCard}
-        onDelete={deleteCard}
+        onDelete={permanentDeleteCard}
       />
     </div>
   );
