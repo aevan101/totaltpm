@@ -19,6 +19,7 @@ export function ProjectSelector() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectDescription, setNewProjectDescription] = useState('');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleCreateProject = () => {
     if (newProjectName.trim()) {
@@ -30,8 +31,13 @@ export function ProjectSelector() {
   };
 
   const handleDeleteProject = (id: string) => {
-    if (confirm('Are you sure you want to delete this project? All data will be lost.')) {
-      deleteProject(id);
+    setConfirmDeleteId(id);
+  };
+
+  const handleConfirmDelete = () => {
+    if (confirmDeleteId) {
+      deleteProject(confirmDeleteId);
+      setConfirmDeleteId(null);
     }
   };
 
@@ -162,6 +168,14 @@ export function ProjectSelector() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal isOpen={!!confirmDeleteId} onClose={() => setConfirmDeleteId(null)} title="Delete Project" size="sm">
+        <p className="text-sm text-neutral-600 mb-4">Are you sure you want to delete this project? All data will be lost.</p>
+        <div className="flex justify-end gap-2">
+          <Button size="sm" variant="ghost" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
+          <Button size="sm" variant="danger" onClick={handleConfirmDelete}>Delete</Button>
+        </div>
       </Modal>
     </div>
   );

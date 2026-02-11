@@ -6,7 +6,7 @@ import { useTasks } from '@/hooks/useTasks';
 import { TaskItem } from './TaskItem';
 import { TaskDetailModal } from './TaskDetailModal';
 import { CreateTaskModal } from './CreateTaskModal';
-import { AddButton, Input, Select } from '@/components/ui';
+import { AddButton, Input, Select, Modal, Button } from '@/components/ui';
 import { TASK_PRIORITY_LABELS } from '@/lib/constants';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 
@@ -16,6 +16,7 @@ export function TasksPanel() {
   const [searchFilter, setSearchFilter] = useState('');
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Get selected card for display
   const selectedCard = selectedCardId ? cards.find((c) => c.id === selectedCardId) : null;
@@ -35,8 +36,13 @@ export function TasksPanel() {
   };
 
   const handleDeleteTask = (id: string) => {
-    if (confirm('Delete this task?')) {
-      deleteTask(id);
+    setConfirmDeleteId(id);
+  };
+
+  const handleConfirmDelete = () => {
+    if (confirmDeleteId) {
+      deleteTask(confirmDeleteId);
+      setConfirmDeleteId(null);
     }
   };
 
@@ -128,6 +134,14 @@ export function TasksPanel() {
         onClose={() => setIsCreateModalOpen(false)}
         onSave={handleCreateTask}
       />
+
+      <Modal isOpen={!!confirmDeleteId} onClose={() => setConfirmDeleteId(null)} title="Delete Task" size="sm">
+        <p className="text-sm text-neutral-600 mb-4">Are you sure you want to delete this task? This cannot be undone.</p>
+        <div className="flex justify-end gap-2">
+          <Button size="sm" variant="ghost" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
+          <Button size="sm" variant="danger" onClick={handleConfirmDelete}>Delete</Button>
+        </div>
+      </Modal>
     </div>
   );
 }
