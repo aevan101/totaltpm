@@ -8,18 +8,22 @@ struct ServerProcess(Mutex<Option<Child>>);
 /// First tries to get the full PATH from the user's login shell,
 /// then falls back to searching common locations.
 fn get_enhanced_path() -> String {
-    // Try to get the full PATH from the user's interactive login shell.
-    // Using -il sources both .zprofile AND .zshrc, which picks up NVM, Volta,
-    // Homebrew, and any custom paths (NVM is typically initialized in .zshrc).
+    // Source the user's shell config files to get their full PATH.
+    // We avoid -i (interactive) because it hangs when launched from Finder
+    // with no TTY. Instead, explicitly source .zprofile and .zshrc.
+    let script = concat!(
+        "[ -f ~/.zprofile ] && source ~/.zprofile 2>/dev/null; ",
+        "[ -f ~/.zshrc ] && source ~/.zshrc 2>/dev/null; ",
+        "echo $PATH"
+    );
     if let Ok(output) = Command::new("/bin/zsh")
-        .args(["-ilc", "echo $PATH"])
+        .args(["-c", script])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()
     {
         if output.status.success() {
             let raw = String::from_utf8_lossy(&output.stdout);
-            // The last non-empty line is our PATH (interactive shells may print other output)
             let shell_path = raw
                 .lines()
                 .rev()
@@ -28,7 +32,7 @@ fn get_enhanced_path() -> String {
                 .trim()
                 .to_string();
             if !shell_path.is_empty() {
-                println!("[Total TPM] Using interactive login shell PATH");
+                println!("[Total TPM] Using shell config PATH");
                 return shell_path;
             }
         }
