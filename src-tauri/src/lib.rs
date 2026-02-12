@@ -4,10 +4,30 @@ use tauri::Manager;
 
 struct ServerProcess(Mutex<Option<Child>>);
 
-/// Build a PATH that includes common Node.js and git locations.
-/// Searches dynamically instead of hardcoding a single NVM version.
+/// Build a PATH that includes Node.js, git, and other tools.
+/// First tries to get the full PATH from the user's login shell,
+/// then falls back to searching common locations.
 fn get_enhanced_path() -> String {
-    let home = std::env::var("HOME").unwrap_or_else(|_| String::from("/Users/angelevan"));
+    // Try to get the full PATH from the user's login shell
+    // This picks up NVM, Volta, Homebrew, and any custom paths
+    if let Ok(output) = Command::new("/bin/zsh")
+        .args(["-l", "-c", "echo $PATH"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+    {
+        if output.status.success() {
+            let shell_path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if !shell_path.is_empty() && shell_path.contains("node") || shell_path.contains("nvm") || shell_path.contains("npm") {
+                println!("[Total TPM] Using login shell PATH");
+                return shell_path;
+            }
+        }
+    }
+
+    // Fallback: build PATH manually
+    println!("[Total TPM] Building PATH manually (login shell failed)");
+    let home = std::env::var("HOME").unwrap_or_else(|_| String::from("/Users/unknown"));
     let base_path = std::env::var("PATH").unwrap_or_default();
 
     let mut paths: Vec<String> = vec![
@@ -24,7 +44,6 @@ fn get_enhanced_path() -> String {
             .filter(|e| e.file_type().map(|t| t.is_dir()).unwrap_or(false))
             .map(|e| e.path().join("bin").to_string_lossy().to_string())
             .collect();
-        // Sort so the latest version comes first
         versions.sort();
         versions.reverse();
         paths.extend(versions);
