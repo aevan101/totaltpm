@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.19",
+    "@tauri-apps/api": "^2.10.1",
     "@types/marked": "^5.0.2",
     "clsx": "^2.1.0",
     "marked": "^17.0.1",

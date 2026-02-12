@@ -10,22 +10,49 @@ import { EmptyState, Button } from '@/components/ui';
 import { useState, useEffect, useCallback } from 'react';
 import { Modal, Input } from '@/components/ui';
 
+function isTauri(): boolean {
+  return typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__;
+}
+
 function useFullscreen() {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
-    const handleChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener('fullscreenchange', handleChange);
-    return () => document.removeEventListener('fullscreenchange', handleChange);
+    if (isTauri()) {
+      import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+        const appWindow = getCurrentWindow();
+        appWindow.isFullscreen().then(setIsFullscreen);
+
+        const unlisten = appWindow.onResized(() => {
+          appWindow.isFullscreen().then(setIsFullscreen);
+        });
+
+        return () => {
+          unlisten.then((fn) => fn());
+        };
+      });
+    } else {
+      const handleChange = () => {
+        setIsFullscreen(!!document.fullscreenElement);
+      };
+      document.addEventListener('fullscreenchange', handleChange);
+      return () => document.removeEventListener('fullscreenchange', handleChange);
+    }
   }, []);
 
-  const toggleFullscreen = useCallback(() => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
+  const toggleFullscreen = useCallback(async () => {
+    if (isTauri()) {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      const appWindow = getCurrentWindow();
+      const fullscreen = await appWindow.isFullscreen();
+      await appWindow.setFullscreen(!fullscreen);
+      setIsFullscreen(!fullscreen);
     } else {
-      document.exitFullscreen();
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
     }
   }, []);
 

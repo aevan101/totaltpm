@@ -15,7 +15,7 @@ export function NotesPanel() {
 
   // Get current project's columns and cards
   const projectColumnIds = columns.filter((c) => c.projectId === currentProjectId).map((c) => c.id);
-  const projectCards = cards.filter((c) => projectColumnIds.includes(c.columnId));
+  const projectCards = cards.filter((c) => projectColumnIds.includes(c.columnId) && !c.archived);
 
   // Get selected card for display
   const selectedCard = selectedCardId ? projectCards.find((c) => c.id === selectedCardId) : null;
