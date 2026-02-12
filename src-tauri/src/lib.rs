@@ -8,18 +8,27 @@ struct ServerProcess(Mutex<Option<Child>>);
 /// First tries to get the full PATH from the user's login shell,
 /// then falls back to searching common locations.
 fn get_enhanced_path() -> String {
-    // Try to get the full PATH from the user's login shell
-    // This picks up NVM, Volta, Homebrew, and any custom paths
+    // Try to get the full PATH from the user's interactive login shell.
+    // Using -il sources both .zprofile AND .zshrc, which picks up NVM, Volta,
+    // Homebrew, and any custom paths (NVM is typically initialized in .zshrc).
     if let Ok(output) = Command::new("/bin/zsh")
-        .args(["-l", "-c", "echo $PATH"])
+        .args(["-ilc", "echo $PATH"])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()
     {
         if output.status.success() {
-            let shell_path = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            if !shell_path.is_empty() && shell_path.contains("node") || shell_path.contains("nvm") || shell_path.contains("npm") {
-                println!("[Total TPM] Using login shell PATH");
+            let raw = String::from_utf8_lossy(&output.stdout);
+            // The last non-empty line is our PATH (interactive shells may print other output)
+            let shell_path = raw
+                .lines()
+                .rev()
+                .find(|l| !l.trim().is_empty() && l.contains('/'))
+                .unwrap_or("")
+                .trim()
+                .to_string();
+            if !shell_path.is_empty() {
+                println!("[Total TPM] Using interactive login shell PATH");
                 return shell_path;
             }
         }
@@ -33,6 +42,7 @@ fn get_enhanced_path() -> String {
     let mut paths: Vec<String> = vec![
         "/usr/local/bin".to_string(),
         "/opt/homebrew/bin".to_string(),
+        "/opt/uber/bin".to_string(),
         format!("{}/.volta/bin", home),
     ];
 
