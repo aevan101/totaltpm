@@ -5,76 +5,15 @@ use tauri::Manager;
 struct ServerProcess(Mutex<Option<Child>>);
 
 /// Build a PATH that includes Node.js, git, and other tools.
-/// First tries to get the full PATH from the user's login shell,
-/// then falls back to searching common locations.
+/// Scans the filesystem directly — no shell dependency, so it works
+/// identically whether launched from Terminal, Finder, or the Dock.
 fn get_enhanced_path() -> String {
-    // Source the user's shell config files to get their full PATH.
-    // We avoid -i (interactive) because it hangs when launched from Finder
-    // with no TTY. Instead, explicitly source .zprofile and .zshrc.
-    // Source the user's shell config to get their full PATH, with a 5-second
-    // timeout so the app never gets stuck if something in .zshrc hangs.
-    let script = concat!(
-        "[ -f ~/.zprofile ] && source ~/.zprofile 2>/dev/null; ",
-        "[ -f ~/.zshrc ] && source ~/.zshrc 2>/dev/null; ",
-        "echo $PATH"
-    );
-    if let Ok(mut child) = Command::new("/bin/zsh")
-        .args(["-c", script])
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-    {
-        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
-        loop {
-            match child.try_wait() {
-                Ok(Some(status)) if status.success() => {
-                    if let Some(stdout) = child.stdout.take() {
-                        use std::io::Read;
-                        let mut buf = String::new();
-                        let mut reader = std::io::BufReader::new(stdout);
-                        let _ = reader.read_to_string(&mut buf);
-                        let shell_path = buf
-                            .lines()
-                            .rev()
-                            .find(|l| !l.trim().is_empty() && l.contains('/'))
-                            .unwrap_or("")
-                            .trim()
-                            .to_string();
-                        if !shell_path.is_empty() {
-                            println!("[Total TPM] Using shell config PATH");
-                            return shell_path;
-                        }
-                    }
-                    break;
-                }
-                Ok(Some(_)) => break, // exited with error
-                Ok(None) => {
-                    if std::time::Instant::now() >= deadline {
-                        println!("[Total TPM] Shell PATH resolution timed out, killing");
-                        let _ = child.kill();
-                        let _ = child.wait();
-                        break;
-                    }
-                    std::thread::sleep(std::time::Duration::from_millis(50));
-                }
-                Err(_) => break,
-            }
-        }
-    }
-
-    // Fallback: build PATH manually
-    println!("[Total TPM] Building PATH manually (login shell failed)");
     let home = std::env::var("HOME").unwrap_or_else(|_| String::from("/Users/unknown"));
     let base_path = std::env::var("PATH").unwrap_or_default();
 
-    let mut paths: Vec<String> = vec![
-        "/usr/local/bin".to_string(),
-        "/opt/homebrew/bin".to_string(),
-        "/opt/uber/bin".to_string(),
-        format!("{}/.volta/bin", home),
-    ];
+    let mut paths: Vec<String> = Vec::new();
 
-    // Find NVM node versions dynamically (use the latest available)
+    // NVM node versions (latest first)
     let nvm_dir = format!("{}/.nvm/versions/node", home);
     if let Ok(entries) = std::fs::read_dir(&nvm_dir) {
         let mut versions: Vec<String> = entries
@@ -87,8 +26,27 @@ fn get_enhanced_path() -> String {
         paths.extend(versions);
     }
 
-    paths.push(base_path);
-    paths.join(":")
+    // Common tool locations
+    let extra = [
+        format!("{}/.volta/bin", home),
+        "/opt/uber/bin".to_string(),
+        "/opt/homebrew/bin".to_string(),
+        "/usr/local/bin".to_string(),
+    ];
+    for p in &extra {
+        if std::path::Path::new(p).is_dir() {
+            paths.push(p.clone());
+        }
+    }
+
+    // Append the inherited (minimal) PATH
+    if !base_path.is_empty() {
+        paths.push(base_path);
+    }
+
+    let result = paths.join(":");
+    println!("[Total TPM] Resolved PATH: {}", result);
+    result
 }
 
 /// Find an available port starting from the preferred one.
