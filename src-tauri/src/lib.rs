@@ -197,6 +197,16 @@ fn save_build_marker(project_dir: &str) {
 /// Build the Next.js app for production.
 fn run_next_build(project_dir: &str) -> bool {
     let enhanced_path = get_enhanced_path();
+
+    // Delete stale .next directory to avoid Turbopack cache issues
+    let next_dir = std::path::Path::new(project_dir).join(".next");
+    if next_dir.exists() {
+        println!("[Total TPM] Removing stale .next directory...");
+        if let Err(e) = std::fs::remove_dir_all(&next_dir) {
+            eprintln!("[Total TPM] Failed to remove .next: {}", e);
+        }
+    }
+
     println!("[Total TPM] Building Next.js for production...");
 
     match Command::new("npx")
