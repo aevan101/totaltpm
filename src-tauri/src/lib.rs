@@ -320,12 +320,36 @@ pub fn run() {
             .to_string_lossy()
             .to_string()
     } else {
-        let home = std::env::var("HOME").unwrap_or_else(|_| String::from("/Users/angelevan"));
-        let default_dir = format!(
-            "{}/Library/Mobile Documents/com~apple~CloudDocs/Documents/VS Code/Total TPM",
-            home
-        );
-        std::env::var("TOTAL_TPM_PROJECT_DIR").unwrap_or(default_dir)
+        // Allow override via environment variable
+        if let Ok(dir) = std::env::var("TOTAL_TPM_PROJECT_DIR") {
+            dir
+        } else {
+            // Search common locations for the project
+            let home = std::env::var("HOME").unwrap_or_else(|_| String::from("/Users/unknown"));
+            let candidates = [
+                format!("{}/Library/Mobile Documents/com~apple~CloudDocs/Documents/VS Code/Total TPM", home),
+                format!("{}/totaltpm", home),
+                format!("{}/Total TPM", home),
+                format!("{}/Projects/Total TPM", home),
+                format!("{}/Projects/totaltpm", home),
+                format!("{}/Desktop/Total TPM", home),
+                format!("{}/Desktop/totaltpm", home),
+                format!("{}/Documents/Total TPM", home),
+                format!("{}/Documents/totaltpm", home),
+            ];
+
+            candidates
+                .iter()
+                .find(|path| {
+                    let p = std::path::Path::new(path);
+                    p.join("package.json").exists() && p.join("src-tauri").exists()
+                })
+                .cloned()
+                .unwrap_or_else(|| {
+                    eprintln!("[Total TPM] Could not find project directory. Set TOTAL_TPM_PROJECT_DIR env var.");
+                    candidates[0].clone()
+                })
+        }
     };
 
     let project_dir_for_setup = project_dir.clone();
