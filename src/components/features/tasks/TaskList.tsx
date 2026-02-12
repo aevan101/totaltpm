@@ -11,7 +11,7 @@ import { Button, EmptyState, Modal } from '@/components/ui';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 
 export function TaskList() {
-  const { cards, selectedCardId } = useApp();
+  const { cards, columns, currentProjectId, selectedCardId } = useApp();
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | 'all'>('all');
   const [searchFilter, setSearchFilter] = useState('');
@@ -19,8 +19,12 @@ export function TaskList() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
+  // Filter cards to current project, exclude archived/deleted
+  const projectColumnIds = columns.filter((c) => c.projectId === currentProjectId).map((c) => c.id);
+  const activeCards = cards.filter((c) => projectColumnIds.includes(c.columnId) && !c.archived);
+
   // Get selected card for display
-  const selectedCard = selectedCardId ? cards.find((c) => c.id === selectedCardId) : null;
+  const selectedCard = selectedCardId ? activeCards.find((c) => c.id === selectedCardId) : null;
 
   const { tasks, taskCounts, addTask, updateTask, deleteTask } = useTasks({
     status: statusFilter,
@@ -131,7 +135,7 @@ export function TaskList() {
             <TaskItem
               key={task.id}
               task={task}
-              cardTitle={task.cardId ? cards.find((c) => c.id === task.cardId)?.title : undefined}
+              cardTitle={task.cardId ? activeCards.find((c) => c.id === task.cardId)?.title : undefined}
               onEdit={setEditingTask}
               onDelete={handleDeleteTask}
               onToggleStatus={handleToggleStatus}
@@ -143,7 +147,7 @@ export function TaskList() {
       {/* Modals */}
       <TaskDetailModal
         task={editingTask}
-        cards={cards}
+        cards={activeCards}
         isOpen={!!editingTask}
         onClose={() => setEditingTask(null)}
         onSave={updateTask}
@@ -151,7 +155,7 @@ export function TaskList() {
 
       <CreateTaskModal
         isOpen={isCreateModalOpen}
-        cards={cards}
+        cards={activeCards}
         selectedCardId={selectedCardId ?? undefined}
         onClose={() => setIsCreateModalOpen(false)}
         onSave={handleCreateTask}
