@@ -11,29 +11,53 @@ fn get_enhanced_path() -> String {
     // Source the user's shell config files to get their full PATH.
     // We avoid -i (interactive) because it hangs when launched from Finder
     // with no TTY. Instead, explicitly source .zprofile and .zshrc.
+    // Source the user's shell config to get their full PATH, with a 5-second
+    // timeout so the app never gets stuck if something in .zshrc hangs.
     let script = concat!(
         "[ -f ~/.zprofile ] && source ~/.zprofile 2>/dev/null; ",
         "[ -f ~/.zshrc ] && source ~/.zshrc 2>/dev/null; ",
         "echo $PATH"
     );
-    if let Ok(output) = Command::new("/bin/zsh")
+    if let Ok(mut child) = Command::new("/bin/zsh")
         .args(["-c", script])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .output()
+        .spawn()
     {
-        if output.status.success() {
-            let raw = String::from_utf8_lossy(&output.stdout);
-            let shell_path = raw
-                .lines()
-                .rev()
-                .find(|l| !l.trim().is_empty() && l.contains('/'))
-                .unwrap_or("")
-                .trim()
-                .to_string();
-            if !shell_path.is_empty() {
-                println!("[Total TPM] Using shell config PATH");
-                return shell_path;
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        loop {
+            match child.try_wait() {
+                Ok(Some(status)) if status.success() => {
+                    if let Some(stdout) = child.stdout.take() {
+                        use std::io::Read;
+                        let mut buf = String::new();
+                        let mut reader = std::io::BufReader::new(stdout);
+                        let _ = reader.read_to_string(&mut buf);
+                        let shell_path = buf
+                            .lines()
+                            .rev()
+                            .find(|l| !l.trim().is_empty() && l.contains('/'))
+                            .unwrap_or("")
+                            .trim()
+                            .to_string();
+                        if !shell_path.is_empty() {
+                            println!("[Total TPM] Using shell config PATH");
+                            return shell_path;
+                        }
+                    }
+                    break;
+                }
+                Ok(Some(_)) => break, // exited with error
+                Ok(None) => {
+                    if std::time::Instant::now() >= deadline {
+                        println!("[Total TPM] Shell PATH resolution timed out, killing");
+                        let _ = child.kill();
+                        let _ = child.wait();
+                        break;
+                    }
+                    std::thread::sleep(std::time::Duration::from_millis(50));
+                }
+                Err(_) => break,
             }
         }
     }
