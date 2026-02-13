@@ -63,6 +63,14 @@ nextjs-portal {
   display: none !important;
 }
 
+/* Remove focus outline from contentEditable areas */
+[contenteditable]:focus,
+[contenteditable]:focus-visible {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
 /* Restore list styles for contentEditable */
 [contenteditable] ul,
 [contenteditable] ol {

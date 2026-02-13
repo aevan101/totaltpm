@@ -328,15 +328,6 @@ export function NoteEditor({ note, cards, onSave, onDelete }: NoteEditorProps) {
       </div>
 
       <style jsx>{`
-        [contenteditable] {
-          outline: none !important;
-          border: none !important;
-          -webkit-focus-ring-color: transparent;
-        }
-        [contenteditable]:focus {
-          outline: none !important;
-          border: none !important;
-        }
         [contenteditable]:empty:before {
           content: attr(data-placeholder);
           color: #d4d4d4;
