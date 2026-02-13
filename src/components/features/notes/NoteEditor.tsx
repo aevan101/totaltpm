@@ -169,7 +169,7 @@ export function NoteEditor({ note, cards, onSave, onDelete }: NoteEditorProps) {
   return (
     <div className="flex flex-col h-full overflow-hidden" style={{ padding: '5px' }}>
       {/* Header - subtle, Apple-like */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-100">
+      <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-3">
           <span className="text-xs text-neutral-400">
             {formatDate(note.updatedAt)}
