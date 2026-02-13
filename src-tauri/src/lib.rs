@@ -64,6 +64,16 @@ fn run_git_pull(project_dir: &str) -> bool {
     println!("[Total TPM] Running git pull --ff-only...");
     let enhanced_path = get_enhanced_path();
 
+    // Reset package-lock.json before pulling — corporate npm registries rewrite
+    // this file during `npm install`, creating dirty state that blocks ff-only pull.
+    let _ = Command::new("git")
+        .args(["checkout", "--", "package-lock.json"])
+        .current_dir(project_dir)
+        .env("PATH", &enhanced_path)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output();
+
     match Command::new("git")
         .args(["pull", "--ff-only", "origin", "main"])
         .current_dir(project_dir)

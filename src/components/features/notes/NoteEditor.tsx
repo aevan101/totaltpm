@@ -303,6 +303,12 @@ export function NoteEditor({ note, cards, onSave, onDelete }: NoteEditorProps) {
           type="text"
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              (e.target as HTMLInputElement).blur();
+            }
+          }}
           placeholder="Untitled"
           className="w-full text-lg font-semibold text-neutral-800 placeholder:text-neutral-300 focus:outline-none tracking-tight"
         />
