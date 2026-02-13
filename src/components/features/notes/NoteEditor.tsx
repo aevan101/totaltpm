@@ -315,18 +315,28 @@ export function NoteEditor({ note, cards, onSave, onDelete }: NoteEditorProps) {
       </div>
 
       {/* Content - Rich Text Editor */}
-      <div className="flex-1 px-4 py-2 overflow-y-auto overflow-x-hidden">
+      <div className="flex-1 px-4 py-2 overflow-y-auto overflow-x-hidden border-0 outline-none">
         <div
           ref={editorRef}
           contentEditable
           onInput={handleContentChange}
           onKeyDown={handleKeyDown}
-          className="w-full h-full text-sm text-neutral-600 focus:outline-none leading-relaxed min-h-[200px]"
+          className="w-full h-full text-sm text-neutral-600 leading-relaxed min-h-[200px]"
           data-placeholder="Start writing..."
+          style={{ outline: 'none', border: 'none', WebkitTapHighlightColor: 'transparent' }}
         />
       </div>
 
       <style jsx>{`
+        [contenteditable] {
+          outline: none !important;
+          border: none !important;
+          -webkit-focus-ring-color: transparent;
+        }
+        [contenteditable]:focus {
+          outline: none !important;
+          border: none !important;
+        }
         [contenteditable]:empty:before {
           content: attr(data-placeholder);
           color: #d4d4d4;
