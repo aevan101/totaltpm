@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useMemo, type DragEvent, type MouseEvent } from 'react';
+import { useMemo, type PointerEvent, type MouseEvent } from 'react';
 import { cn, formatDate } from '@/lib/utils';
 import { IconButton, Badge } from '@/components/ui';
 import { TASK_PRIORITY_LABELS, PRIORITY_COLORS } from '@/lib/constants';
 import { DeliverableStatusModal } from './DeliverableStatusModal';
 import type { KanbanCard as KanbanCardType, Task } from '@/types';
+import { useState } from 'react';
 
 interface TaskProgress {
   total: number;
@@ -16,13 +17,14 @@ interface TaskProgress {
 interface KanbanCardProps {
   card: KanbanCardType;
   isSelected?: boolean;
+  isBeingDragged?: boolean;
   taskProgress?: TaskProgress;
   cardTasks?: Task[];
   onEdit: (card: KanbanCardType) => void;
   onDelete: (id: string) => void;
   onArchive: (id: string) => void;
   onSelect?: (card: KanbanCardType) => void;
-  onDragStart: (e: DragEvent, card: KanbanCardType) => void;
+  onDragStart: (e: PointerEvent, card: KanbanCardType) => void;
 }
 
 function getDaysInColumn(columnChangedAt: number | undefined): { days: number; label: string } {
@@ -37,24 +39,18 @@ function getDaysInColumn(columnChangedAt: number | undefined): { days: number; l
   return { days: diffDays, label: `${diffDays} days` };
 }
 
-export function KanbanCard({ card, isSelected, taskProgress, cardTasks = [], onEdit, onDelete, onArchive, onSelect, onDragStart }: KanbanCardProps) {
-  const [isDragging, setIsDragging] = useState(false);
+export function KanbanCard({ card, isSelected, isBeingDragged, taskProgress, cardTasks = [], onEdit, onDelete, onArchive, onSelect, onDragStart }: KanbanCardProps) {
   const [showStatus, setShowStatus] = useState(false);
 
   const daysInfo = useMemo(() => getDaysInColumn(card.columnChangedAt), [card.columnChangedAt]);
   const isOverdue = card.dueDate && card.dueDate < Date.now();
 
-  const handleDragStart = (e: DragEvent) => {
-    setIsDragging(true);
+  const handlePointerDown = (e: PointerEvent) => {
+    if (e.button !== 0) return;
     onDragStart(e, card);
   };
 
-  const handleDragEnd = () => {
-    setIsDragging(false);
-  };
-
   const handleClick = (e: MouseEvent) => {
-    // If clicking the select area or the card itself (not buttons)
     if (onSelect) {
       onSelect(card);
     }
@@ -72,18 +68,16 @@ export function KanbanCard({ card, isSelected, taskProgress, cardTasks = [], onE
 
   return (
     <div
-      draggable
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
+      onPointerDown={handlePointerDown}
       onClick={handleClick}
       className={cn(
         'bg-white border-2 rounded-md cursor-pointer w-full',
-        'hover:border-neutral-200 transition-all group',
+        'hover:border-neutral-200 transition-colors group',
         'shadow-sm hover:shadow',
         isSelected ? 'border-blue-500 ring-2 ring-blue-100' : 'border-white',
-        isDragging && 'opacity-50 cursor-grabbing'
+        isBeingDragged && 'opacity-30 pointer-events-none'
       )}
-      style={{ padding: '6px 10px', overflow: 'hidden' }}
+      style={{ padding: '6px 10px', overflow: 'hidden', touchAction: 'none' }}
     >
       <div className="relative">
         <div>
