@@ -377,6 +377,24 @@ pub fn run() {
         }
     };
 
+    // Clear WebKit cache to prevent stale JS from previous builds
+    if !cfg!(debug_assertions) {
+        let home = std::env::var("HOME").unwrap_or_else(|_| String::from("/Users/unknown"));
+        let cache_dirs = [
+            format!("{}/Library/WebKit/total-tpm", home),
+            format!("{}/Library/WebKit/com.totaltpm.app", home),
+            format!("{}/Library/Caches/total-tpm", home),
+            format!("{}/Library/Caches/com.totaltpm.app", home),
+        ];
+        for dir in &cache_dirs {
+            let p = std::path::Path::new(dir);
+            if p.exists() {
+                println!("[Total TPM] Clearing webview cache: {}", dir);
+                let _ = std::fs::remove_dir_all(p);
+            }
+        }
+    }
+
     let project_dir_for_setup = project_dir.clone();
 
     let app = tauri::Builder::default()
