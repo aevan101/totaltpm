@@ -1,8 +1,48 @@
+use std::io::Write;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 use tauri::Manager;
 
 struct ServerProcess(Mutex<Option<Child>>);
+
+/// Lifecycle log — writes to both stdout and a file so we can debug
+/// issues when the app is launched from Finder (where stdout is invisible).
+static LOG_DIR: Mutex<Option<String>> = Mutex::new(None);
+
+fn lifecycle_log(msg: &str) {
+    let secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    let line = format!("[{}] {}\n", secs, msg);
+    print!("{}", line);
+    if let Some(dir) = LOG_DIR.lock().ok().and_then(|g| g.clone()) {
+        let path = std::path::Path::new(&dir).join(".lifecycle.log");
+        if let Ok(mut f) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&path)
+        {
+            let _ = f.write_all(line.as_bytes());
+        }
+    }
+}
+
+/// Kill any orphaned Next.js server processes from previous app launches.
+/// This prevents stale servers from occupying ports and serving old code.
+fn kill_orphan_servers() {
+    let _ = Command::new("pkill")
+        .args(["-f", "next start"])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .output();
+    let _ = Command::new("pkill")
+        .args(["-f", "next-server"])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .output();
+    std::thread::sleep(std::time::Duration::from_millis(500));
+}
 
 /// Build a PATH that includes Node.js, git, and other tools.
 /// Scans the filesystem directly — no shell dependency, so it works
@@ -39,13 +79,12 @@ fn get_enhanced_path() -> String {
         }
     }
 
-    // Append the inherited (minimal) PATH
     if !base_path.is_empty() {
         paths.push(base_path);
     }
 
     let result = paths.join(":");
-    println!("[Total TPM] Resolved PATH: {}", result);
+    lifecycle_log(&format!("Resolved PATH: {}", result));
     result
 }
 
@@ -61,7 +100,7 @@ fn find_available_port(start: u16) -> u16 {
 
 /// Run git pull in the project directory. Returns true if code was updated.
 fn run_git_pull(project_dir: &str) -> bool {
-    println!("[Total TPM] Running git pull --ff-only...");
+    lifecycle_log("Running git pull --ff-only...");
     let enhanced_path = get_enhanced_path();
 
     // Reset package-lock.json before pulling — corporate npm registries rewrite
@@ -87,17 +126,16 @@ fn run_git_pull(project_dir: &str) -> bool {
             let stderr = String::from_utf8_lossy(&output.stderr);
             if output.status.success() {
                 let msg = stdout.trim();
-                println!("[Total TPM] git pull: {}", msg);
-                // Return true if code actually changed
+                lifecycle_log(&format!("git pull: {}", msg));
                 !msg.contains("Already up to date")
             } else {
-                eprintln!("[Total TPM] git pull warning: {}", stderr.trim());
-                eprintln!("[Total TPM] git pull stdout: {}", stdout.trim());
+                lifecycle_log(&format!("git pull warning: {}", stderr.trim()));
+                lifecycle_log(&format!("git pull stdout: {}", stdout.trim()));
                 false
             }
         }
         Err(e) => {
-            eprintln!("[Total TPM] git pull failed to execute: {}", e);
+            lifecycle_log(&format!("git pull failed to execute: {}", e));
             false
         }
     }
@@ -109,7 +147,7 @@ fn run_npm_install(project_dir: &str) -> bool {
     let lock_file = std::path::Path::new(project_dir).join("package-lock.json");
 
     let needs_install = if !node_modules.exists() {
-        println!("[Total TPM] node_modules missing, running npm install...");
+        lifecycle_log("node_modules missing, running npm install...");
         true
     } else if lock_file.exists() {
         let lock_modified = lock_file
@@ -122,10 +160,10 @@ fn run_npm_install(project_dir: &str) -> bool {
             .unwrap_or(std::time::SystemTime::UNIX_EPOCH);
 
         if lock_modified > nm_modified {
-            println!("[Total TPM] package-lock.json changed, running npm install...");
+            lifecycle_log("package-lock.json changed, running npm install...");
             true
         } else {
-            println!("[Total TPM] node_modules up to date, skipping npm install");
+            lifecycle_log("node_modules up to date, skipping npm install");
             false
         }
     } else {
@@ -147,16 +185,16 @@ fn run_npm_install(project_dir: &str) -> bool {
     {
         Ok(output) => {
             if output.status.success() {
-                println!("[Total TPM] npm install completed");
+                lifecycle_log("npm install completed");
                 true
             } else {
                 let stderr = String::from_utf8_lossy(&output.stderr);
-                eprintln!("[Total TPM] npm install failed: {}", stderr.trim());
+                lifecycle_log(&format!("npm install failed: {}", stderr.trim()));
                 false
             }
         }
         Err(e) => {
-            eprintln!("[Total TPM] npm install failed to execute: {}", e);
+            lifecycle_log(&format!("npm install failed to execute: {}", e));
             false
         }
     }
@@ -177,30 +215,12 @@ fn get_git_head(project_dir: &str) -> Option<String> {
         .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
 }
 
-/// Check if .next/ was built from the current commit.
-fn is_build_current(project_dir: &str) -> bool {
-    let marker = std::path::Path::new(project_dir).join(".next/.build-commit");
-    let current_head = get_git_head(project_dir);
-    match (std::fs::read_to_string(&marker).ok(), current_head) {
-        (Some(built), Some(head)) => {
-            let matches = built.trim() == head.trim();
-            if matches {
-                println!("[Total TPM] .next/ matches HEAD ({})", head.trim());
-            } else {
-                println!("[Total TPM] .next/ stale: built={}, HEAD={}", built.trim(), head.trim());
-            }
-            matches
-        }
-        _ => false,
-    }
-}
-
 /// Save the current HEAD hash as the build marker.
 fn save_build_marker(project_dir: &str) {
     if let Some(head) = get_git_head(project_dir) {
         let marker = std::path::Path::new(project_dir).join(".next/.build-commit");
         let _ = std::fs::write(&marker, &head);
-        println!("[Total TPM] Saved build marker: {}", head.trim());
+        lifecycle_log(&format!("Saved build marker: {}", head.trim()));
     }
 }
 
@@ -208,16 +228,16 @@ fn save_build_marker(project_dir: &str) {
 fn run_next_build(project_dir: &str) -> bool {
     let enhanced_path = get_enhanced_path();
 
-    // Delete stale .next directory to avoid Turbopack cache issues
+    // Delete .next directory to ensure a clean build
     let next_dir = std::path::Path::new(project_dir).join(".next");
     if next_dir.exists() {
-        println!("[Total TPM] Removing stale .next directory...");
+        lifecycle_log("Removing .next directory for clean build...");
         if let Err(e) = std::fs::remove_dir_all(&next_dir) {
-            eprintln!("[Total TPM] Failed to remove .next: {}", e);
+            lifecycle_log(&format!("Failed to remove .next: {}", e));
         }
     }
 
-    println!("[Total TPM] Building Next.js for production...");
+    lifecycle_log("Building Next.js for production...");
 
     match Command::new("npx")
         .args(["next", "build"])
@@ -228,18 +248,21 @@ fn run_next_build(project_dir: &str) -> bool {
         .output()
     {
         Ok(output) => {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
             if output.status.success() {
-                println!("[Total TPM] Build complete");
+                lifecycle_log("Build complete");
+                lifecycle_log(&format!("Build stdout: {}", stdout.trim()));
                 save_build_marker(project_dir);
                 true
             } else {
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                eprintln!("[Total TPM] Next.js build failed: {}", stderr.trim());
+                lifecycle_log(&format!("Next.js build failed stderr: {}", stderr.trim()));
+                lifecycle_log(&format!("Next.js build failed stdout: {}", stdout.trim()));
                 false
             }
         }
         Err(e) => {
-            eprintln!("[Total TPM] Next.js build failed to execute: {}", e);
+            lifecycle_log(&format!("Next.js build failed to execute: {}", e));
             false
         }
     }
@@ -269,11 +292,11 @@ fn start_nextjs_server(project_dir: &str, port: u16) -> Result<Child, String> {
             .map_err(|e| format!("Failed to start Next.js production server: {}", e))?
     };
 
-    println!(
-        "[Total TPM] Next.js server started on port {} (PID: {})",
+    lifecycle_log(&format!(
+        "Next.js server started on port {} (PID: {})",
         port,
         child.id()
-    );
+    ));
     Ok(child)
 }
 
@@ -290,16 +313,16 @@ async fn wait_for_server(port: u16, max_retries: u32) -> Result<(), String> {
             Ok(response)
                 if response.status().is_success() || response.status().is_redirection() =>
             {
-                println!("[Total TPM] Server ready after {} attempts", attempt);
+                lifecycle_log(&format!("Server ready after {} attempts", attempt));
                 return Ok(());
             }
             Ok(_) => {}
             Err(_) => {
                 if attempt % 10 == 0 {
-                    println!(
-                        "[Total TPM] Waiting for server... (attempt {}/{})",
+                    lifecycle_log(&format!(
+                        "Waiting for server... (attempt {}/{})",
                         attempt, max_retries
-                    );
+                    ));
                 }
             }
         }
@@ -315,7 +338,7 @@ async fn wait_for_server(port: u16, max_retries: u32) -> Result<(), String> {
 /// Kill the server process and all its children.
 fn kill_server(child: &mut Child) {
     let pid = child.id();
-    println!("[Total TPM] Killing Next.js server (PID: {})...", pid);
+    lifecycle_log(&format!("Killing Next.js server (PID: {})...", pid));
 
     #[cfg(unix)]
     {
@@ -332,12 +355,12 @@ fn kill_server(child: &mut Child) {
     }
 
     let _ = child.wait();
-    println!("[Total TPM] Server process terminated");
+    lifecycle_log("Server process terminated");
 }
 
 /// Send a status update to the loading screen.
 fn send_status(app_handle: &tauri::AppHandle, msg: &str) {
-    println!("[Total TPM] Status: {}", msg);
+    lifecycle_log(&format!("Status: {}", msg));
     if let Some(window) = app_handle.get_webview_window("main") {
         let js = format!("if(typeof updateStatus==='function')updateStatus('{}')", msg.replace('\'', "\\'"));
         let _ = window.eval(&js);
@@ -355,11 +378,9 @@ pub fn run() {
             .to_string_lossy()
             .to_string()
     } else {
-        // Allow override via environment variable
         if let Ok(dir) = std::env::var("TOTAL_TPM_PROJECT_DIR") {
             dir
         } else {
-            // Search common locations for the project
             let home = std::env::var("HOME").unwrap_or_else(|_| String::from("/Users/unknown"));
             let candidates = [
                 format!("{}/Library/Mobile Documents/com~apple~CloudDocs/Documents/VS Code/Total TPM", home),
@@ -381,14 +402,26 @@ pub fn run() {
                 })
                 .cloned()
                 .unwrap_or_else(|| {
-                    eprintln!("[Total TPM] Could not find project directory. Set TOTAL_TPM_PROJECT_DIR env var.");
+                    eprintln!("Could not find project directory. Set TOTAL_TPM_PROJECT_DIR env var.");
                     candidates[0].clone()
                 })
         }
     };
 
-    // Clear WebKit cache to prevent stale JS from previous builds
+    // Initialize lifecycle log — truncate old log on each launch
+    if let Ok(mut g) = LOG_DIR.lock() {
+        *g = Some(project_dir.clone());
+    }
+    let log_path = std::path::Path::new(&project_dir).join(".lifecycle.log");
+    let _ = std::fs::write(&log_path, ""); // truncate
+    lifecycle_log(&format!("=== App starting, project dir: {}", project_dir));
+
+    // In production, kill orphaned servers and clear caches before anything else
     if !cfg!(debug_assertions) {
+        lifecycle_log("Killing any orphaned Next.js server processes...");
+        kill_orphan_servers();
+
+        // Clear WebKit cache to prevent stale JS from previous builds
         let home = std::env::var("HOME").unwrap_or_else(|_| String::from("/Users/unknown"));
         let cache_dirs = [
             format!("{}/Library/WebKit/total-tpm", home),
@@ -399,7 +432,7 @@ pub fn run() {
         for dir in &cache_dirs {
             let p = std::path::Path::new(dir);
             if p.exists() {
-                println!("[Total TPM] Clearing webview cache: {}", dir);
+                lifecycle_log(&format!("Clearing webview cache: {}", dir));
                 let _ = std::fs::remove_dir_all(p);
             }
         }
@@ -415,8 +448,7 @@ pub fn run() {
 
             tauri::async_runtime::spawn(async move {
                 if cfg!(debug_assertions) {
-                    // Dev mode: Tauri CLI starts the server via beforeDevCommand.
-                    println!("[Total TPM] Dev mode — server managed by Tauri CLI");
+                    lifecycle_log("Dev mode — server managed by Tauri CLI");
                     tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
                     if let Some(window) = app_handle.get_webview_window("main") {
                         let _ = window.show();
@@ -424,7 +456,11 @@ pub fn run() {
                     }
                 } else {
                     // Production mode: full lifecycle management
-                    // The loading screen is already visible via frontendDist
+
+                    // Log HEAD commit for diagnostics
+                    if let Some(head) = get_git_head(&dir) {
+                        lifecycle_log(&format!("HEAD before pull: {}", head));
+                    }
 
                     // Step 1: Git pull
                     send_status(&app_handle, "Checking for updates...");
@@ -435,6 +471,10 @@ pub fn run() {
                         send_status(&app_handle, "Up to date");
                     }
 
+                    if let Some(head) = get_git_head(&dir) {
+                        lifecycle_log(&format!("HEAD after pull: {}", head));
+                    }
+
                     // Step 2: npm install if needed
                     send_status(&app_handle, "Checking dependencies...");
                     let deps_installed = run_npm_install(&dir);
@@ -442,23 +482,17 @@ pub fn run() {
                         send_status(&app_handle, "Dependencies updated");
                     }
 
-                    // Step 3: Build if code changed, deps changed, .next missing, or .next is stale
-                    let next_dir = std::path::Path::new(&dir).join(".next");
-                    let needs_build = code_changed || deps_installed || !next_dir.exists() || !is_build_current(&dir);
-
-                    if needs_build {
-                        send_status(&app_handle, "Building application...");
-                        if !run_next_build(&dir) {
-                            send_status(&app_handle, "Build failed — starting with previous version");
-                        }
-                    } else {
-                        println!("[Total TPM] No changes, skipping build");
+                    // Step 3: ALWAYS rebuild — eliminates all stale-code issues.
+                    send_status(&app_handle, "Building application...");
+                    if !run_next_build(&dir) {
+                        lifecycle_log("BUILD FAILED — this is the likely cause of stale code");
+                        send_status(&app_handle, "Build failed — starting with previous version");
                     }
 
                     // Step 4: Find available port
                     send_status(&app_handle, "Starting server...");
                     let port = find_available_port(3000);
-                    println!("[Total TPM] Using port: {}", port);
+                    lifecycle_log(&format!("Using port: {}", port));
 
                     // Step 5: Start Next.js server
                     match start_nextjs_server(&dir, port) {
@@ -470,6 +504,7 @@ pub fn run() {
                             send_status(&app_handle, "Almost ready...");
                             match wait_for_server(port, 60).await {
                                 Ok(()) => {
+                                    lifecycle_log(&format!("Navigating webview to http://localhost:{}", port));
                                     if let Some(window) = app_handle.get_webview_window("main") {
                                         let url = format!("http://localhost:{}", port);
                                         let _ = window.navigate(url.parse().unwrap());
@@ -481,16 +516,18 @@ pub fn run() {
                                     }
                                 }
                                 Err(e) => {
-                                    eprintln!("[Total TPM] Server failed to start: {}", e);
+                                    lifecycle_log(&format!("Server failed to start: {}", e));
                                     send_status(&app_handle, "Server failed to start");
                                 }
                             }
                         }
                         Err(e) => {
-                            eprintln!("[Total TPM] Failed to start server: {}", e);
+                            lifecycle_log(&format!("Failed to start server: {}", e));
                             send_status(&app_handle, "Failed to start server");
                         }
                     }
+
+                    lifecycle_log("=== Lifecycle complete");
                 }
             });
 
