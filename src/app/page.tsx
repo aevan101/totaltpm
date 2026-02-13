@@ -42,17 +42,25 @@ function useFullscreen() {
 
   const toggleFullscreen = useCallback(async () => {
     if (isTauri()) {
-      const { getCurrentWindow } = await import('@tauri-apps/api/window');
-      const appWindow = getCurrentWindow();
-      const fullscreen = await appWindow.isFullscreen();
-      await appWindow.setFullscreen(!fullscreen);
-      setIsFullscreen(!fullscreen);
-    } else {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-      } else {
-        document.exitFullscreen();
+      try {
+        const { getCurrentWindow } = await import('@tauri-apps/api/window');
+        const appWindow = getCurrentWindow();
+        const fullscreen = await appWindow.isFullscreen();
+        await appWindow.setFullscreen(!fullscreen);
+        setIsFullscreen(!fullscreen);
+        return;
+      } catch {
+        // Tauri IPC unavailable (e.g. page loaded from localhost), fall through to browser API
       }
+    }
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch {
+      // Browser fullscreen API not supported
     }
   }, []);
 
