@@ -153,13 +153,42 @@ export function NoteEditor({ note, cards, onSave, onDelete }: NoteEditorProps) {
   const formatNumberedList = () => execCommand('insertOrderedList');
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.metaKey || e.ctrlKey) {
+      if (e.key === 'b') {
+        e.preventDefault();
+        formatBold();
+        return;
+      }
+      if (e.key === 'i') {
+        e.preventDefault();
+        formatItalic();
+        return;
+      }
+    }
+    if (e.key === ' ') {
+      const selection = window.getSelection();
+      if (selection?.anchorNode) {
+        const text = selection.anchorNode.textContent || '';
+        const offset = selection.anchorOffset;
+        // "- " at the start of a line triggers bullet list
+        if (text.substring(0, offset) === '-') {
+          e.preventDefault();
+          // Remove the "-" character
+          const range = document.createRange();
+          range.setStart(selection.anchorNode, 0);
+          range.setEnd(selection.anchorNode, offset);
+          range.deleteContents();
+          document.execCommand('insertUnorderedList', false);
+          handleContentChange();
+          return;
+        }
+      }
+    }
     if (e.key === 'Tab') {
       e.preventDefault();
       if (e.shiftKey) {
-        // Shift+Tab: outdent
         document.execCommand('outdent', false);
       } else {
-        // Tab: indent
         document.execCommand('indent', false);
       }
       handleContentChange();
@@ -255,35 +284,37 @@ export function NoteEditor({ note, cards, onSave, onDelete }: NoteEditorProps) {
                 <text x="3" y="20" fontSize="8" fill="currentColor" stroke="none" fontFamily="system-ui">3</text>
               </svg>
             </button>
+            <div className="w-px h-3.5 bg-neutral-200 mx-1.5" />
+            {/* Links Button */}
+            <div className="relative" ref={linksRef}>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => setShowLinks(!showLinks)}
+                className={`p-1.5 rounded-md transition-all flex items-center gap-1 ${
+                  showLinks || links.length > 0
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600'
+                }`}
+                title="Attached Links"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                </svg>
+                {links.length > 0 && (
+                  <span className="text-xs font-medium">{links.length}</span>
+                )}
+              </button>
+              {showLinks && (
+                <div className="absolute left-0 top-full mt-2 w-80 bg-white rounded-md shadow-xl border border-neutral-100 p-4 z-50">
+                  <div className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-3">Attached Links</div>
+                  <LinksEditor links={links} onChange={handleLinksChange} compact />
+                </div>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Links Button */}
-          <div className="relative" ref={linksRef}>
-            <button
-              type="button"
-              onClick={() => setShowLinks(!showLinks)}
-              className={`px-2 py-1.5 rounded-md transition-all flex items-center gap-1.5 ${
-                showLinks || links.length > 0
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600'
-              }`}
-              title="Attached Links"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
-              </svg>
-              {links.length > 0 && (
-                <span className="text-xs font-medium">{links.length}</span>
-              )}
-            </button>
-            {showLinks && (
-              <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-md shadow-xl border border-neutral-100 p-4 z-50">
-                <div className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-3">Attached Links</div>
-                <LinksEditor links={links} onChange={handleLinksChange} compact />
-              </div>
-            )}
-          </div>
           <IconButton
             variant="danger"
             size="sm"
