@@ -367,6 +367,15 @@ fn send_status(app_handle: &tauri::AppHandle, msg: &str) {
     }
 }
 
+#[tauri::command]
+fn open_url(url: String) -> Result<(), String> {
+    Command::new("open")
+        .arg(&url)
+        .spawn()
+        .map_err(|e| format!("Failed to open URL: {}", e))?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Determine the project directory
@@ -441,8 +450,8 @@ pub fn run() {
     let project_dir_for_setup = project_dir.clone();
 
     let app = tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
         .manage(ServerProcess(Mutex::new(None)))
+        .invoke_handler(tauri::generate_handler![open_url])
         .setup(move |app| {
             let app_handle = app.handle().clone();
             let dir = project_dir_for_setup.clone();

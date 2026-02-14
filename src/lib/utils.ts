@@ -44,12 +44,15 @@ export function reorder<T>(list: T[], startIndex: number, endIndex: number): T[]
 }
 
 export async function openExternalUrl(url: string): Promise<void> {
-  try {
-    // Use Tauri opener plugin when running in Tauri
-    const { openUrl } = await import('@tauri-apps/plugin-opener');
-    await openUrl(url);
-  } catch {
-    // Fallback for browser environment
-    window.open(url, '_blank');
+  // Use custom Tauri command when running in Tauri desktop app
+  if (typeof window !== 'undefined' && (window as Record<string, unknown>).__TAURI__) {
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      await invoke('open_url', { url });
+      return;
+    } catch {
+      // fall through to browser fallback
+    }
   }
+  window.open(url, '_blank');
 }
