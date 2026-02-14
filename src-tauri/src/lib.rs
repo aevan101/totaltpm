@@ -441,6 +441,7 @@ pub fn run() {
     let project_dir_for_setup = project_dir.clone();
 
     let app = tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .manage(ServerProcess(Mutex::new(None)))
         .setup(move |app| {
             let app_handle = app.handle().clone();

@@ -42,3 +42,14 @@ export function reorder<T>(list: T[], startIndex: number, endIndex: number): T[]
   result.splice(endIndex, 0, removed);
   return result;
 }
+
+export async function openExternalUrl(url: string): Promise<void> {
+  try {
+    // Use Tauri opener plugin when running in Tauri
+    const { openUrl } = await import('@tauri-apps/plugin-opener');
+    await openUrl(url);
+  } catch {
+    // Fallback for browser environment
+    window.open(url, '_blank');
+  }
+}

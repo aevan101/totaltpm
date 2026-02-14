@@ -2,6 +2,7 @@
 
 import { useState, forwardRef, useImperativeHandle } from 'react';
 import { Button, Input, IconButton } from '@/components/ui';
+import { openExternalUrl } from '@/lib/utils';
 import type { LinkAttachment } from '@/types';
 
 export interface LinksEditorHandle {
@@ -135,7 +136,7 @@ export const LinksEditor = forwardRef<LinksEditorHandle, LinksEditorProps>(funct
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    window.open(link.url, '_blank');
+                    openExternalUrl(link.url);
                   }}
                   className="flex-1 min-w-0 text-sm text-blue-600 hover:text-blue-700 hover:underline truncate cursor-pointer"
                 >
