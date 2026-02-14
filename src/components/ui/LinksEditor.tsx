@@ -1,8 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, forwardRef, useImperativeHandle } from 'react';
 import { Button, Input, IconButton } from '@/components/ui';
 import type { LinkAttachment } from '@/types';
+
+export interface LinksEditorHandle {
+  flushPending: () => LinkAttachment[];
+}
 
 interface LinksEditorProps {
   links: LinkAttachment[];
@@ -10,10 +14,23 @@ interface LinksEditorProps {
   compact?: boolean;
 }
 
-export function LinksEditor({ links, onChange, compact = false }: LinksEditorProps) {
+export const LinksEditor = forwardRef<LinksEditorHandle, LinksEditorProps>(function LinksEditor({ links, onChange, compact = false }, ref) {
   const [isAdding, setIsAdding] = useState(false);
   const [newUrl, setNewUrl] = useState('');
   const [newTitle, setNewTitle] = useState('');
+
+  useImperativeHandle(ref, () => ({
+    flushPending: (): LinkAttachment[] => {
+      if (newUrl.trim()) {
+        let url = newUrl.trim();
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+          url = 'https://' + url;
+        }
+        return [...links, { url, title: newTitle.trim() || undefined }];
+      }
+      return links;
+    },
+  }));
 
   const handleAddLink = () => {
     if (newUrl.trim()) {
@@ -150,4 +167,4 @@ export function LinksEditor({ links, onChange, compact = false }: LinksEditorPro
       )}
     </div>
   );
-}
+});

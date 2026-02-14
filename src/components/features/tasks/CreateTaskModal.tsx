@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Modal, Input, Textarea, Button, Select, LinksEditor } from '@/components/ui';
+import { useState, useEffect, useRef } from 'react';
+import { Modal, Input, Textarea, Button, Select, LinksEditor, type LinksEditorHandle } from '@/components/ui';
 import { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS } from '@/lib/constants';
 import type { TaskStatus, TaskPriority, KanbanCard, LinkAttachment } from '@/types';
 
@@ -22,6 +22,7 @@ export function CreateTaskModal({ isOpen, cards, selectedCardId, onClose, onSave
   const [cardId, setCardId] = useState('');
   const [links, setLinks] = useState<LinkAttachment[]>([]);
   const [comments, setComments] = useState('');
+  const linksEditorRef = useRef<LinksEditorHandle>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -30,6 +31,7 @@ export function CreateTaskModal({ isOpen, cards, selectedCardId, onClose, onSave
   }, [isOpen, selectedCardId]);
 
   const handleSave = () => {
+    const finalLinks = linksEditorRef.current?.flushPending() ?? links;
     if (title.trim()) {
       onSave({
         title: title.trim(),
@@ -38,7 +40,7 @@ export function CreateTaskModal({ isOpen, cards, selectedCardId, onClose, onSave
         priority,
         dueDate: dueDate ? new Date(dueDate + 'T12:00:00').getTime() : undefined,
         cardId: cardId || undefined,
-        links,
+        links: finalLinks,
         comments: comments.trim() || undefined,
       });
       handleClose();
@@ -132,7 +134,7 @@ export function CreateTaskModal({ isOpen, cards, selectedCardId, onClose, onSave
           <label className="block text-sm font-medium text-neutral-700 mb-1.5">
             Attached Links
           </label>
-          <LinksEditor links={links} onChange={setLinks} />
+          <LinksEditor ref={linksEditorRef} links={links} onChange={setLinks} />
         </div>
         <div className="flex justify-end gap-3 pt-2">
           <Button type="button" variant="secondary" onClick={handleClose}>

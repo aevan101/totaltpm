@@ -8,4 +8,4 @@ export { Badge } from './Badge';
 export { Dropdown, DropdownItem } from './Dropdown';
 export { EmptyState } from './EmptyState';
 export { Select } from './Select';
-export { LinksEditor } from './LinksEditor';
+export { LinksEditor, type LinksEditorHandle } from './LinksEditor';
