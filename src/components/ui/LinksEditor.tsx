@@ -76,7 +76,12 @@ export const LinksEditor = forwardRef<LinksEditorHandle, LinksEditorProps>(funct
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 min-w-0 text-sm text-blue-600 hover:text-blue-700 hover:underline truncate"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  window.open(link.url, '_blank');
+                }}
+                className="flex-1 min-w-0 text-sm text-blue-600 hover:text-blue-700 hover:underline truncate cursor-pointer"
               >
                 {link.title || getDomain(link.url)}
               </a>

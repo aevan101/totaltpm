@@ -1,5 +1,6 @@
 'use client';
 
+import { forwardRef, type PointerEvent } from 'react';
 import { cn } from '@/lib/utils';
 import { Badge, IconButton } from '@/components/ui';
 import { PRIORITY_COLORS, STATUS_COLORS, TASK_PRIORITY_LABELS, TASK_STATUS_LABELS } from '@/lib/constants';
@@ -9,22 +10,30 @@ import type { Task } from '@/types';
 interface TaskItemProps {
   task: Task;
   cardTitle?: string;
+  isBeingDragged?: boolean;
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
   onToggleStatus: (id: string) => void;
+  onDragStart?: (e: PointerEvent, task: Task) => void;
 }
 
-export function TaskItem({ task, cardTitle, onEdit, onDelete, onToggleStatus }: TaskItemProps) {
+export const TaskItem = forwardRef<HTMLDivElement, TaskItemProps>(function TaskItem(
+  { task, cardTitle, isBeingDragged, onEdit, onDelete, onToggleStatus, onDragStart },
+  ref
+) {
   const isOverdue = task.dueDate && task.dueDate < Date.now() && task.status !== 'done';
 
   return (
     <div
+      ref={ref}
       className={cn(
         'bg-white border border-neutral-200 rounded-md transition-all hover:border-neutral-300 group overflow-hidden cursor-pointer',
-        task.status === 'done' && 'opacity-60'
+        task.status === 'done' && 'opacity-60',
+        isBeingDragged && 'opacity-30'
       )}
-      style={{ padding: '10px 14px' }}
+      style={{ padding: '10px 14px', touchAction: 'none' }}
       onClick={() => onEdit(task)}
+      onPointerDown={onDragStart ? (e) => onDragStart(e, task) : undefined}
     >
       <div className="flex items-start gap-3">
         {/* Checkbox */}
@@ -118,4 +127,4 @@ export function TaskItem({ task, cardTitle, onEdit, onDelete, onToggleStatus }: 
       </div>
     </div>
   );
-}
+});

@@ -55,6 +55,7 @@ export interface Task {
   cardId?: string | null;  // Optional link to KanbanCard
   links?: LinkAttachment[];  // Attached links
   comments?: string;  // Free-form notes/comments
+  order?: number;  // Manual sort order (lower = higher in list)
   createdAt: number;
   updatedAt: number;
 }

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { IconButton, Select, LinksEditor } from '@/components/ui';
-import { formatDate } from '@/lib/utils';
 import type { Note, KanbanCard, LinkAttachment } from '@/types';
 
 interface NoteEditorProps {
@@ -200,9 +199,6 @@ export function NoteEditor({ note, cards, onSave, onDelete }: NoteEditorProps) {
       {/* Header - subtle, Apple-like */}
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-3">
-          <span className="text-xs text-neutral-400">
-            {formatDate(note.updatedAt)}
-          </span>
           <Select
             value={cardId ?? ''}
             onChange={(e) => handleCardIdChange(e.target.value || null)}

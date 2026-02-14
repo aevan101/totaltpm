@@ -53,6 +53,7 @@ interface AppContextType {
   createTask: (projectId: string, title: string, data?: Partial<Task>) => Task;
   updateTask: (id: string, updates: Partial<Omit<Task, 'id' | 'projectId' | 'createdAt'>>) => void;
   deleteTask: (id: string) => void;
+  reorderTasks: (taskIds: string[]) => void;
 
   // Note actions
   createNote: (projectId: string, title: string, content?: string, cardId?: string | null) => Note;
@@ -390,6 +391,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Task actions
   const createTask = useCallback(
     (projectId: string, title: string, data?: Partial<Task>): Task => {
+      const projectTasks = tasks.filter((t) => t.projectId === projectId);
+      const maxOrder = projectTasks.length > 0
+        ? Math.max(...projectTasks.map((t) => t.order ?? 0))
+        : -1;
+
       const now = Date.now();
       const task: Task = {
         id: generateId(),
@@ -402,6 +408,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         cardId: data?.cardId ?? null,
         links: data?.links,
         comments: data?.comments,
+        order: maxOrder + 1,
         createdAt: now,
         updatedAt: now,
       };
@@ -409,7 +416,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setTasks((prev) => [...prev, task]);
       return task;
     },
-    [setTasks]
+    [tasks, setTasks]
   );
 
   const updateTask = useCallback(
@@ -426,6 +433,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const deleteTask = useCallback(
     (id: string) => {
       setTasks((prev) => prev.filter((t) => t.id !== id));
+    },
+    [setTasks]
+  );
+
+  const reorderTasks = useCallback(
+    (taskIds: string[]) => {
+      setTasks((prev) =>
+        prev.map((t) => {
+          const index = taskIds.indexOf(t.id);
+          if (index !== -1) {
+            return { ...t, order: index };
+          }
+          return t;
+        })
+      );
     },
     [setTasks]
   );
@@ -501,6 +523,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       createTask,
       updateTask,
       deleteTask,
+      reorderTasks,
       createNote,
       updateNote,
       deleteNote,
@@ -535,6 +558,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       createTask,
       updateTask,
       deleteTask,
+      reorderTasks,
       createNote,
       updateNote,
       deleteNote,

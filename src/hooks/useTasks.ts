@@ -18,6 +18,7 @@ export function useTasks(filters?: TaskFilters) {
     createTask,
     updateTask,
     deleteTask,
+    reorderTasks,
   } = useApp();
 
   const projectTasks = useMemo(() => {
@@ -51,12 +52,13 @@ export function useTasks(filters?: TaskFilters) {
       );
     }
 
-    // Sort by priority (P0 first) when filtering by a deliverable, otherwise by newest first
+    // Sort by priority (P0 first) when filtering by a deliverable
     if (filters?.cardId) {
       const priorityOrder: Record<string, number> = { p0: 0, p1: 1, p2: 2, p3: 3, p4: 4 };
       return filtered.sort((a, b) => (priorityOrder[a.priority] ?? 5) - (priorityOrder[b.priority] ?? 5) || b.createdAt - a.createdAt);
     }
-    return filtered.sort((a, b) => b.createdAt - a.createdAt);
+    // Otherwise sort by manual order (fallback to createdAt for tasks without order)
+    return filtered.sort((a, b) => (a.order ?? a.createdAt) - (b.order ?? b.createdAt));
   }, [tasks, currentProjectId, filters?.status, filters?.priority, filters?.search, filters?.cardId]);
 
   const taskCounts = useMemo(() => {
@@ -90,6 +92,7 @@ export function useTasks(filters?: TaskFilters) {
     addTask,
     updateTask,
     deleteTask,
+    reorderTasks,
     getCardTaskProgress,
   };
 }
