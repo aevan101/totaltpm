@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, type PointerEvent } from 'react';
+import { useState, useRef, useCallback, useMemo, type PointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '@/context/AppContext';
 import { useTasks } from '@/hooks/useTasks';
@@ -22,7 +22,7 @@ interface TaskDragState {
 }
 
 export function TasksPanel() {
-  const { selectedCardId, cards, columns, currentProjectId } = useApp();
+  const { selectedCardId, cards, columns, currentProjectId, tasks: allTasks, projects, setCurrentProjectId } = useApp();
 
   // Filter cards to current project only
   const projectColumnIds = columns.filter((c) => c.projectId === currentProjectId).map((c) => c.id);
@@ -36,6 +36,34 @@ export function TasksPanel() {
 
   // Get selected card for display
   const selectedCard = selectedCardId ? projectCards.find((c) => c.id === selectedCardId) : null;
+
+  // Compute highest-priority incomplete task across all projects
+  const nextTask = useMemo(() => {
+    const priorityOrder: Record<string, number> = { p0: 0, p1: 1, p2: 2, p3: 3, p4: 4 };
+    const statusOrder: Record<string, number> = { 'in-progress': 0, 'todo': 1 };
+    const incomplete = allTasks.filter((t) => t.status !== 'done');
+    if (incomplete.length === 0) return null;
+    incomplete.sort((a, b) => {
+      const pA = priorityOrder[a.priority] ?? 5;
+      const pB = priorityOrder[b.priority] ?? 5;
+      if (pA !== pB) return pA - pB;
+      const sA = statusOrder[a.status] ?? 2;
+      const sB = statusOrder[b.status] ?? 2;
+      if (sA !== sB) return sA - sB;
+      return a.createdAt - b.createdAt;
+    });
+    return incomplete[0];
+  }, [allTasks]);
+
+  const nextTaskProject = nextTask ? projects.find((p) => p.id === nextTask.projectId) : null;
+
+  const priorityDotColor: Record<string, string> = {
+    p0: 'bg-red-500',
+    p1: 'bg-orange-500',
+    p2: 'bg-amber-500',
+    p3: 'bg-blue-500',
+    p4: 'bg-gray-400',
+  };
 
   const { tasks, addTask, updateTask, deleteTask, reorderTasks } = useTasks({
     status: statusFilter,
@@ -199,10 +227,28 @@ export function TasksPanel() {
     <div className="flex flex-col h-full bg-white">
       {/* Header */}
       <div className="px-4 py-2.5 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <h2 className="text-base font-semibold text-neutral-900">Tasks</h2>
+        <div className="flex items-center gap-2 min-w-0">
+          <h2 className="text-base font-semibold text-neutral-900 shrink-0">Tasks</h2>
+          {nextTask && (
+            <button
+              onClick={() => {
+                if (nextTask.projectId !== currentProjectId) {
+                  setCurrentProjectId(nextTask.projectId);
+                }
+              }}
+              className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-neutral-100 hover:bg-neutral-200 text-xs text-neutral-600 hover:text-neutral-900 transition-colors cursor-pointer min-w-0"
+              title={`${nextTask.title}${nextTaskProject ? ` (${nextTaskProject.name})` : ''}`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${priorityDotColor[nextTask.priority] || 'bg-gray-400'}`} />
+              <span className="text-neutral-400 shrink-0">Next Up:</span>
+              <span className="truncate font-medium">{nextTask.title}</span>
+              {nextTaskProject && nextTask.projectId !== currentProjectId && (
+                <span className="text-neutral-400 shrink-0">({nextTaskProject.name})</span>
+              )}
+            </button>
+          )}
           {selectedCard && (
-            <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded">
+            <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded shrink-0">
               {selectedCard.title}
             </span>
           )}
