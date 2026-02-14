@@ -45,7 +45,8 @@ export function reorder<T>(list: T[], startIndex: number, endIndex: number): T[]
 
 export async function openExternalUrl(url: string): Promise<void> {
   // Use custom Tauri command when running in Tauri desktop app
-  if (typeof window !== 'undefined' && (window as Record<string, unknown>).__TAURI__) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (typeof window !== 'undefined' && (window as any).__TAURI__) {
     try {
       const { invoke } = await import('@tauri-apps/api/core');
       await invoke('open_url', { url });
