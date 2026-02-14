@@ -38,7 +38,7 @@ export function CreateTaskModal({ isOpen, cards, selectedCardId, onClose, onSave
         priority,
         dueDate: dueDate ? new Date(dueDate + 'T12:00:00').getTime() : undefined,
         cardId: cardId || undefined,
-        links: links.length > 0 ? links : undefined,
+        links,
         comments: comments.trim() || undefined,
       });
       handleClose();
