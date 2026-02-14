@@ -44,16 +44,16 @@ export function reorder<T>(list: T[], startIndex: number, endIndex: number): T[]
 }
 
 export async function openExternalUrl(url: string): Promise<void> {
-  // Use custom Tauri command when running in Tauri desktop app
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (typeof window !== 'undefined' && (window as any).__TAURI__) {
-    try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      await invoke('open_url', { url });
-      return;
-    } catch {
-      // fall through to browser fallback
-    }
+  // Try server-side open (works in both Tauri and browser with local server)
+  try {
+    const res = await fetch('/api/open-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+    if (res.ok) return;
+  } catch {
+    // fall through to browser fallback
   }
   window.open(url, '_blank');
 }
